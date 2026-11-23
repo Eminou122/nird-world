@@ -127,7 +127,7 @@ export function BuildingPage() {
   )
 }
 
-function NeighbourLink({ building, direction }: { building: Building; direction: 'previous' | 'next' }) {
+export function NeighbourLink({ building, direction }: { building: Building; direction: 'previous' | 'next' }) {
   const isNext = direction === 'next'
   return (
     <Link

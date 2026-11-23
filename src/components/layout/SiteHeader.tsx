@@ -53,7 +53,7 @@ export function SiteHeader() {
     })
 
   return (
-    <header className="sticky top-0 z-40 border-b border-ivory-50/10 bg-forest-900/95 backdrop-blur supports-[backdrop-filter]:bg-forest-900/85">
+    <header className="sticky top-0 z-40 print:hidden border-b border-ivory-50/10 bg-forest-900/95 backdrop-blur supports-[backdrop-filter]:bg-forest-900/85">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
         <Link to="/" onClick={close} className="rounded-md" aria-label="NIRD WORLD — accueil">
           <Logo />

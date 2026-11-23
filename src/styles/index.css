@@ -114,3 +114,16 @@
     transform: none;
   }
 }
+
+/* ---------- Print (diagnostic report) ---------- */
+
+@media print {
+  html {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  body {
+    background: white;
+  }
+}

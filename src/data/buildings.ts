@@ -87,7 +87,7 @@ export const buildings: readonly Building[] = [
     theme: 'Diagnostic numérique',
     summary: 'Évaluer où en est votre établissement.',
     description:
-      'Point de départ du parcours, l’École accueillera un diagnostic guidé pour mesurer le degré d’indépendance numérique d’un établissement : outils, données, matériel et gouvernance.',
+      'Point de départ du parcours, l’École accueille un diagnostic guidé qui mesure le degré d’indépendance numérique d’un établissement : logiciels, données, matériel, accessibilité et gouvernance.',
     icon: GraduationCap,
     pillar: 'responsable',
     missionLink:
