@@ -1,0 +1,116 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-forest-950: #0d201b;
+  --color-forest-900: #142d27;
+  --color-forest-800: #1b3a32;
+  --color-forest-700: #24493f;
+  --color-emerald-700: #1f6249;
+  --color-emerald-600: #28785b;
+  --color-emerald-500: #2f8c6a;
+  --color-gold-300: #e6c58f;
+  --color-gold-400: #d6a85f;
+  --color-gold-700: #8a6428;
+  --color-ivory-50: #f9f8f3;
+  --color-ivory-100: #f3f1e9;
+  --color-ivory-200: #e8e4d6;
+  --color-ivory-300: #d6d0bc;
+  --color-ink: #17231f;
+  --color-ink-muted: #4a5853;
+
+  --font-display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+  --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --shadow-soft: 0 1px 2px rgb(20 45 39 / 0.06), 0 8px 24px -12px rgb(20 45 39 / 0.18);
+  --shadow-lift: 0 2px 4px rgb(20 45 39 / 0.08), 0 18px 40px -18px rgb(20 45 39 / 0.35);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-ivory-100 font-sans text-ink antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold-400);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  ::selection {
+    background: var(--color-gold-300);
+    color: var(--color-forest-900);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+/* ---------- Village scene ---------- */
+
+.village-building {
+  cursor: pointer;
+}
+
+.village-building__lift {
+  transition:
+    transform 0.4s cubic-bezier(0.2, 0.7, 0.2, 1),
+    filter 0.4s ease;
+}
+
+.village-building.is-active .village-building__lift {
+  transform: translateY(-7px);
+  filter: brightness(1.05) saturate(1.05);
+}
+
+.village-ring {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.village-ring.is-active {
+  opacity: 1;
+}
+
+.turbine-rotor {
+  animation: turbine-spin 9s linear infinite;
+}
+
+@keyframes turbine-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .village-building.is-active .village-building__lift {
+    transform: none;
+  }
+}
