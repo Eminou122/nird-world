@@ -6,19 +6,19 @@ const linkClass = 'rounded text-ivory-100/70 transition-colors hover:text-ivory-
 
 export function SiteFooter() {
   return (
-    <footer className="bg-forest-950 text-ivory-100 print:hidden">
+    <footer className="on-dark bg-forest-950 text-ivory-100 print:hidden">
       <div className="mx-auto grid max-w-7xl gap-12 px-5 py-16 sm:px-8 md:grid-cols-12">
         <div className="md:col-span-5">
           <Logo />
           <p className="mt-5 font-display text-xl text-ivory-50 italic">Explorer. Comprendre. Transformer.</p>
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-ivory-100/65">
-            Un village numérique pour accompagner les établissements scolaires vers un numérique inclusif, responsable et
-            durable.
+            Un village à explorer pour comprendre de quoi dépend le numérique de votre école, et comment en reprendre la
+            main.
           </p>
         </div>
 
         <nav aria-labelledby="footer-village" className="md:col-span-4">
-          <h2 id="footer-village" className="font-sans text-xs font-semibold tracking-[0.18em] text-gold-400 uppercase">
+          <h2 id="footer-village" className="font-sans text-sm font-semibold tracking-normal text-gold-300">
             Le village
           </h2>
           <ul className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2.5 text-sm">
@@ -33,7 +33,7 @@ export function SiteFooter() {
         </nav>
 
         <nav aria-labelledby="footer-projet" className="md:col-span-3">
-          <h2 id="footer-projet" className="font-sans text-xs font-semibold tracking-[0.18em] text-gold-400 uppercase">
+          <h2 id="footer-projet" className="font-sans text-sm font-semibold tracking-normal text-gold-300">
             Le projet
           </h2>
           <ul className="mt-4 space-y-2.5 text-sm">

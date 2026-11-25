@@ -10,11 +10,14 @@
   --color-emerald-500: #2f8c6a;
   --color-gold-300: #e6c58f;
   --color-gold-400: #d6a85f;
-  --color-gold-700: #8a6428;
+  --color-gold-700: #765320;
   --color-ivory-50: #f9f8f3;
   --color-ivory-100: #f3f1e9;
   --color-ivory-200: #e8e4d6;
   --color-ivory-300: #d6d0bc;
+  --color-sage-100: #edf2e8;
+  --color-sage-200: #dfe8d9;
+  --color-sage-300: #c9d7c4;
   --color-ink: #17231f;
   --color-ink-muted: #4a5853;
 
@@ -27,7 +30,7 @@
 
 @layer base {
   html {
-    scroll-behavior: smooth;
+    interpolate-size: allow-keywords;
     -webkit-text-size-adjust: 100%;
   }
 
@@ -37,7 +40,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-gold-400);
+    outline: 2px solid var(--color-emerald-600);
     outline-offset: 3px;
     border-radius: 6px;
   }
@@ -52,6 +55,8 @@
   h3 {
     font-family: var(--font-display);
     font-optical-sizing: auto;
+    /* Fraunces' soft cut: rounder terminals, warmer headlines. */
+    font-variation-settings: 'SOFT' 100;
     letter-spacing: -0.015em;
     text-wrap: balance;
   }
@@ -59,6 +64,55 @@
   p {
     text-wrap: pretty;
   }
+}
+
+/* Dark surfaces need the gold focus ring. */
+.on-dark :focus-visible {
+  outline-color: var(--color-gold-300);
+}
+
+/* ---------- Disclosure ---------- */
+
+.disclosure > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure__chevron {
+  transition: transform 0.25s ease;
+}
+
+.disclosure[open] > summary .disclosure__chevron {
+  transform: rotate(180deg);
+}
+
+.disclosure::details-content {
+  block-size: 0;
+  overflow: clip;
+  opacity: 0;
+  transition:
+    block-size 0.3s cubic-bezier(0.2, 0.7, 0.2, 1),
+    opacity 0.3s ease,
+    content-visibility 0.3s allow-discrete;
+}
+
+.disclosure[open]::details-content {
+  block-size: auto;
+  opacity: 1;
+}
+
+/* ---------- Moving between places ---------- */
+
+.building-art {
+  view-transition-name: building-art;
+}
+
+::view-transition-group(building-art) {
+  animation-duration: 0.45s;
 }
 
 /* ---------- Village scene ---------- */
@@ -74,8 +128,8 @@
 }
 
 .village-building.is-active .village-building__lift {
-  transform: translateY(-7px);
-  filter: brightness(1.05) saturate(1.05);
+  transform: translateY(-9px);
+  filter: brightness(1.05) saturate(1.08);
 }
 
 .village-ring {
@@ -98,10 +152,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
   *,
   *::before,
   *::after {
@@ -112,6 +162,16 @@
 
   .village-building.is-active .village-building__lift {
     transform: none;
+  }
+
+  .disclosure::details-content {
+    transition-duration: 0.01ms;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }
 

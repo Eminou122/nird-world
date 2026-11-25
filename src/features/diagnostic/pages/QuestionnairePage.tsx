@@ -1,191 +1,181 @@
-import { ArrowLeft, ArrowRight, Ban, Check, CircleQuestionMark, Eraser, HardDrive, RotateCcw } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, ListChecks } from 'lucide-react'
 import * as m from 'motion/react-m'
 import { useEffect, useId, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router'
-import { buttonClass } from '../../../components/ui/ButtonLink'
+import { Disclosure } from '../../../components/ui/Disclosure'
+import { buttonClass } from '../../../components/ui/buttonClass'
+import { QuestionMap } from '../components/QuestionMap'
+import { ConfirmDialog, dimensionIcons, plural } from '../components/ui'
+import { dimensionIntros, questionGuides } from '../data/guidance'
 import { dimensions, getDimension, maturityLabels, questions } from '../data/questions'
 import { computeResult } from '../engine/scoring'
 import { diagnosticActions, isPersisted, useDiagnosticStore } from '../hooks/useDiagnosticStore'
-import type { Answer, MaturityLevel } from '../types/diagnostic'
-import { ConfirmDialog, DiagnosticHeader, institutionLabel, institutionTypeLabel } from '../components/ui'
 import { diagnosticPaths } from '../paths'
+import type { Answer, MaturityLevel } from '../types/diagnostic'
 
 const levels: MaturityLevel[] = [0, 1, 2, 3, 4]
 
 const specialOptions = [
-  {
-    value: 'unknown',
-    icon: CircleQuestionMark,
-    label: 'Je ne sais pas',
-    hint: 'Non compté dans le score. Une piste de vérification vous sera proposée.',
-  },
-  {
-    value: 'na',
-    icon: Ban,
-    label: 'Non applicable',
-    hint: 'Cette pratique ne concerne pas votre établissement. Elle est retirée du calcul.',
-  },
+  { value: 'unknown', label: 'Je ne sais pas' },
+  { value: 'na', label: 'Non applicable' },
 ] as const
 
-const answerStatus = (answer: Answer | undefined) =>
-  answer === undefined
-    ? 'sans réponse'
-    : answer === 'unknown'
-      ? '« Je ne sais pas »'
-      : answer === 'na'
-        ? 'non applicable'
-        : `niveau ${answer}`
+const lowerFirst = (text: string) => text.charAt(0).toLowerCase() + text.slice(1)
 
 export function QuestionnairePage() {
   const store = useDiagnosticStore()
   const navigate = useNavigate()
   const assessment = store.assessments.find((a) => a.id === store.activeId)
   const [confirmReset, setConfirmReset] = useState(false)
+  const mapRef = useRef<HTMLDialogElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const userMoved = useRef(false)
   const headingId = useId()
   const index = assessment?.currentIndex ?? 0
 
-  // After Previous/Next, bring the new question into view and give it focus for screen-reader users.
+  // After moving to another question, start from its top and give it focus for screen-reader and keyboard users.
   useEffect(() => {
     if (!userMoved.current) return
     userMoved.current = false
-    const heading = headingRef.current
-    if (!heading) return
-    heading.focus({ preventScroll: true })
-    const top = heading.getBoundingClientRect().top
-    if (top < 96 || top > window.innerHeight * 0.6) window.scrollTo({ top: window.scrollY + top - 140 })
+    headingRef.current?.focus({ preventScroll: true })
+    window.scrollTo({ top: 0, behavior: 'instant' })
   }, [index])
 
   if (!assessment) return <Navigate to={diagnosticPaths.intro} replace />
+  const { id, answers } = assessment
 
   const question = questions[index] ?? questions[0]
   const dimension = getDimension(question.dimension)
-  const dimensionQuestions = questions.filter((q) => q.dimension === question.dimension)
-  const positionInDimension = dimensionQuestions.findIndex((q) => q.id === question.id) + 1
-  const answer = assessment.answers[question.id]
-  const answeredCount = questions.filter((q) => assessment.answers[q.id] !== undefined).length
+  const DimensionIcon = dimensionIcons[dimension.id]
+  const dimensionIndex = dimensions.findIndex((d) => d.id === dimension.id)
+  const previousDimension = dimensions[dimensionIndex - 1]
+  const isFirstOfDimension = questions[index - 1]?.dimension !== dimension.id
+  const isAnswered = (q: (typeof questions)[number]) => answers[q.id] !== undefined
+  const previousDone =
+    previousDimension !== undefined && questions.filter((q) => q.dimension === previousDimension.id).every(isAnswered)
+
+  const answer = answers[question.id]
+  const guide = questionGuides[question.id]
+  const answeredCount = questions.filter(isAnswered).length
+  const remaining = questions.length - answeredCount
   const isLast = index === questions.length - 1
-  const typeLabel = institutionTypeLabel(assessment)
 
   const goTo = (target: number) => {
-    userMoved.current = true
-    diagnosticActions.goTo(assessment.id, target)
+    userMoved.current = target !== index
+    diagnosticActions.goTo(id, target)
   }
 
-  const select = (value: Answer) => diagnosticActions.answer(assessment.id, question.id, value)
+  const select = (value: Answer) => diagnosticActions.answer(id, question.id, value)
 
   function finish() {
-    if (computeResult(assessment!.answers).valid) diagnosticActions.markCompleted(assessment!.id)
-    navigate(diagnosticPaths.results(assessment!.id))
+    const valid = computeResult(answers).valid
+    if (valid) diagnosticActions.markCompleted(id)
+    navigate(diagnosticPaths.results(id), { state: { justCompleted: valid } })
   }
 
   return (
     <>
       <title>{`Question ${index + 1} sur ${questions.length} — Diagnostic — NIRD WORLD`}</title>
 
-      <DiagnosticHeader
-        crumbs={[
-          { label: 'Accueil', to: '/' },
-          { label: 'Le village', to: '/village' },
-          { label: 'École', to: diagnosticPaths.intro },
-          { label: 'Diagnostic' },
-        ]}
-        eyebrow={[institutionLabel(assessment), typeLabel].filter(Boolean).join(' · ')}
-        title="Diagnostic d’indépendance numérique"
-      >
-        <div className="mt-8">
-          <div className="flex flex-wrap items-baseline justify-between gap-2 text-sm">
-            <p className="font-semibold">
-              Question {index + 1} <span className="font-normal text-ivory-100/65">sur {questions.length}</span>
+      <div className="bg-ivory-100">
+        <div className="mx-auto max-w-3xl px-5 pt-3 sm:px-8 sm:pt-6">
+          <div className="flex items-center justify-between gap-3">
+            <Link
+              to={diagnosticPaths.intro}
+              className="inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-ink-muted hover:text-forest-900"
+            >
+              <ArrowLeft aria-hidden="true" className="size-4" /> École
+            </Link>
+            <p className="text-sm text-ink-muted">
+              Question <span className="font-semibold text-forest-900 tabular-nums">{index + 1}</span> sur {questions.length}
             </p>
-            <p className="text-ivory-100/70">
-              {answeredCount} réponse{answeredCount > 1 ? 's' : ''} sur {questions.length}
-            </p>
+            <button
+              type="button"
+              onClick={() => mapRef.current?.showModal()}
+              className="inline-flex min-h-11 min-w-11 items-center justify-end gap-2 rounded-md text-sm font-semibold text-emerald-700 hover:text-forest-900"
+            >
+              <ListChecks aria-hidden="true" className="size-5 sm:size-4" />
+              <span className="max-sm:sr-only">Toutes les questions</span>
+            </button>
           </div>
+
+          {/* One segment per dimension, filled as its questions are answered. */}
           <div
             role="progressbar"
             aria-label="Questions répondues"
             aria-valuemin={0}
             aria-valuemax={questions.length}
             aria-valuenow={answeredCount}
-            className="mt-3 h-1.5 overflow-hidden rounded-full bg-ivory-50/10"
+            aria-valuetext={`${plural(answeredCount, 'réponse', 'réponses')} sur ${questions.length}`}
+            className="mt-1 flex gap-1.5"
           >
-            <div
-              className="h-full rounded-full bg-gold-400 transition-[width] duration-500"
-              style={{ width: `${(answeredCount / questions.length) * 100}%` }}
-            />
+            {dimensions.map((d) => {
+              const own = questions.filter((q) => q.dimension === d.id)
+              const done = own.filter(isAnswered).length
+              return (
+                <span key={d.id} className="h-2 flex-1 overflow-hidden rounded-full bg-sage-300">
+                  <span
+                    className={`block h-full rounded-full transition-[width] duration-500 ${d.id === dimension.id ? 'bg-gold-400' : 'bg-emerald-600'}`}
+                    style={{ width: `${(done / own.length) * 100}%` }}
+                  />
+                </span>
+              )
+            })}
           </div>
-
-          <nav aria-label="Questions du diagnostic" className="mt-6">
-            <ol className="grid grid-cols-5 gap-2 sm:gap-3">
-              {dimensions.map((d) => {
-                const isCurrent = d.id === question.dimension
-                return (
-                  <li key={d.id} className={`rounded-xl p-2.5 sm:p-3 ${isCurrent ? 'bg-ivory-50/10 ring-1 ring-gold-400/40' : 'bg-ivory-50/[0.03]'}`}>
-                    <p className={`text-xs font-semibold ${isCurrent ? 'text-gold-300' : 'text-ivory-100/60'}`}>
-                      <span className="font-display text-sm">{d.letter}</span>
-                      <span className="hidden md:inline"> · {d.name}</span>
-                    </p>
-                    <ol className="mt-2 grid w-fit grid-cols-2 gap-1.5 sm:flex">
-                      {questions.map((q, i) =>
-                        q.dimension !== d.id ? null : (
-                          <li key={q.id}>
-                            <button
-                              type="button"
-                              onClick={() => goTo(i)}
-                              aria-current={i === index ? 'step' : undefined}
-                              aria-label={`Question ${i + 1} : ${q.title} (${answerStatus(assessment.answers[q.id])})`}
-                              className={`block size-3 rounded-full transition sm:size-3.5 ${
-                                i === index
-                                  ? 'bg-gold-400 ring-2 ring-gold-400/40 ring-offset-2 ring-offset-forest-900'
-                                  : assessment.answers[q.id] !== undefined
-                                    ? 'bg-ivory-50/80 hover:bg-ivory-50'
-                                    : 'bg-transparent ring-1 ring-ivory-50/40 ring-inset hover:bg-ivory-50/20'
-                              }`}
-                            />
-                          </li>
-                        ),
-                      )}
-                    </ol>
-                  </li>
-                )
-              })}
-            </ol>
-          </nav>
+          <p className="mt-2.5 flex items-center gap-2 text-sm font-semibold text-emerald-700">
+            <DimensionIcon aria-hidden="true" className="size-4" /> {dimension.name}
+          </p>
         </div>
-      </DiagnosticHeader>
 
-      <section aria-labelledby={headingId} className="bg-ivory-100 py-10 sm:py-14">
-        <div className="mx-auto max-w-3xl px-4 sm:px-8">
+        <section aria-labelledby={headingId} className="mx-auto max-w-3xl px-5 pt-5 pb-10 sm:px-8 sm:pt-8">
           <m.div
             key={question.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, ease: [0.2, 0.7, 0.2, 1] }}
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.28, ease: [0.2, 0.7, 0.2, 1] }}
           >
-            <p className="text-xs font-semibold tracking-[0.14em] text-emerald-700 uppercase">
-              Dimension {dimension.letter} · {dimension.name}
-              <span className="text-ink-muted"> — {positionInDimension} sur {dimensionQuestions.length}</span>
-            </p>
-            <h2
+            {isFirstOfDimension && (
+              <p className="mb-5 rounded-2xl bg-sage-200 px-5 py-3.5 leading-relaxed text-forest-900">
+                {previousDone && `${previousDimension.name} : c’est fait. `}
+                <span className="font-semibold">
+                  {index === 0 ? 'Premier sujet' : dimensionIndex === dimensions.length - 1 ? 'Dernier sujet' : 'Nouveau sujet'}&nbsp;:
+                </span>{' '}
+                {lowerFirst(dimensionIntros[dimension.id])}
+              </p>
+            )}
+
+            <h1
               id={headingId}
               ref={headingRef}
               tabIndex={-1}
-              className="mt-3 text-2xl leading-snug font-medium text-forest-900 outline-none sm:text-3xl"
+              className="text-[1.6rem] leading-snug font-medium text-forest-900 outline-none sm:text-4xl sm:leading-tight"
             >
               {question.prompt}
-            </h2>
-            <p className="mt-3 text-sm text-ink-muted">
-              Choisissez la description la plus proche de ce qui se pratique réellement aujourd’hui.
-            </p>
+            </h1>
 
-            <fieldset aria-labelledby={headingId} className="mt-7">
+            <Disclosure variant="inline" title="Pourquoi cette question&nbsp;?">
+              <div className="max-w-2xl rounded-2xl bg-ivory-50 px-5 py-4 leading-relaxed text-ink-muted">
+                <p>{guide.why}</p>
+                {guide.terms && (
+                  <dl className="mt-3 space-y-1.5 text-sm">
+                    {guide.terms.map(({ term, meaning }) => (
+                      <div key={term}>
+                        <dt className="inline font-semibold text-forest-900">{term}&nbsp;: </dt>
+                        <dd className="inline">{meaning}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+              </div>
+            </Disclosure>
+
+            <fieldset aria-labelledby={headingId} className="mt-3">
+              <p className="mb-3 text-ink-muted">Qu’est-ce qui ressemble le plus à votre établissement&nbsp;?</p>
               <div className="space-y-2.5">
                 {levels.map((level) => (
                   <label
                     key={level}
-                    className="group flex cursor-pointer gap-4 rounded-2xl bg-ivory-50 p-4 ring-1 ring-ivory-300/80 transition hover:ring-emerald-600/40 has-checked:bg-emerald-600/[0.07] has-checked:ring-2 has-checked:ring-emerald-600 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-gold-400 sm:p-5"
+                    className="group relative flex cursor-pointer gap-4 rounded-2xl bg-ivory-50 px-4 py-4 ring-1 ring-forest-900/10 transition duration-200 hover:ring-emerald-600/50 has-checked:bg-sage-200 has-checked:ring-2 has-checked:ring-emerald-600 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-emerald-600 sm:px-5"
                   >
                     <input
                       type="radio"
@@ -193,32 +183,25 @@ export function QuestionnairePage() {
                       value={level}
                       checked={answer === level}
                       onChange={() => select(level)}
-                      className="sr-only"
+                      className="sr-only scroll-my-32"
                     />
-                    <span
-                      aria-hidden="true"
-                      className="grid size-9 shrink-0 place-items-center rounded-full bg-ivory-200 font-display text-lg text-forest-900 tabular-nums transition group-has-checked:bg-emerald-600 group-has-checked:text-ivory-50"
-                    >
-                      {level}
-                    </span>
+                    <RadioMark />
                     <span className="min-w-0 flex-1">
-                      <span className="block font-semibold text-forest-900">{maturityLabels[level]}</span>
-                      <span className="mt-0.5 block leading-relaxed text-ink-muted">{question.levels[level]}</span>
+                      <span className="block leading-relaxed text-forest-900">{question.levels[level]}</span>
+                      <span className="mt-1 block text-sm text-ink-muted">{maturityLabels[level]}</span>
                     </span>
-                    <Check
-                      aria-hidden="true"
-                      className="mt-1 size-5 shrink-0 text-emerald-600 opacity-0 transition group-has-checked:opacity-100"
-                    />
                   </label>
                 ))}
               </div>
 
-              <p className="mt-6 mb-2.5 text-sm font-medium text-ink-muted">Si vous ne pouvez pas répondre :</p>
-              <div className="grid gap-2.5 sm:grid-cols-2">
-                {specialOptions.map(({ value, icon: Icon, label, hint }) => (
+              <p className="mt-6 mb-2.5 text-sm text-ink-muted">
+                Pas de réponse évidente&nbsp;? Ces deux choix ne comptent jamais comme un zéro.
+              </p>
+              <div className="flex flex-col gap-2.5 sm:flex-row">
+                {specialOptions.map(({ value, label }) => (
                   <label
                     key={value}
-                    className="group flex cursor-pointer gap-3 rounded-2xl bg-ivory-50/60 p-4 ring-1 ring-ivory-300/80 transition hover:ring-forest-900/30 has-checked:bg-forest-900/[0.06] has-checked:ring-2 has-checked:ring-forest-900/70 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-gold-400"
+                    className="group relative flex min-h-12 cursor-pointer items-center gap-3 rounded-full px-4 ring-1 ring-forest-900/15 transition duration-200 hover:ring-emerald-600/50 has-checked:bg-sage-200 has-checked:ring-2 has-checked:ring-emerald-600 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-emerald-600 sm:pr-6"
                   >
                     <input
                       type="radio"
@@ -226,89 +209,120 @@ export function QuestionnairePage() {
                       value={value}
                       checked={answer === value}
                       onChange={() => select(value)}
-                      className="sr-only"
+                      className="sr-only scroll-my-32"
                     />
-                    <Icon aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-ink-muted group-has-checked:text-forest-900" />
-                    <span>
-                      <span className="block font-semibold text-forest-900">{label}</span>
-                      <span className="mt-0.5 block text-sm leading-relaxed text-ink-muted">{hint}</span>
-                    </span>
+                    <RadioMark />
+                    <span className="text-forest-900">{label}</span>
                   </label>
                 ))}
               </div>
+              {answer === 'unknown' && (
+                <p className="mt-3 text-sm text-ink-muted">C’est noté. Votre rapport vous dira comment trouver l’information.</p>
+              )}
+              {answer === 'na' && <p className="mt-3 text-sm text-ink-muted">C’est noté. Cette question est retirée du calcul.</p>}
             </fieldset>
 
-            {answer !== undefined && (
-              <button
-                type="button"
-                onClick={() => diagnosticActions.answer(assessment.id, question.id, null)}
-                className="mt-4 inline-flex items-center gap-1.5 rounded text-sm text-ink-muted underline-offset-4 hover:text-forest-900 hover:underline"
-              >
-                <Eraser aria-hidden="true" className="size-4" /> Effacer ma réponse
-              </button>
+            {isLast && remaining > 0 && (
+              <p className="mt-6 text-ink-muted">
+                Il reste {plural(remaining, 'question', 'questions')} sans réponse.{' '}
+                <button
+                  type="button"
+                  onClick={() => goTo(questions.findIndex((q) => !isAnswered(q)))}
+                  className="rounded font-semibold text-emerald-700 underline underline-offset-4 hover:text-forest-900"
+                >
+                  Y revenir
+                </button>
+              </p>
             )}
           </m.div>
+        </section>
 
-          <div className="mt-10 flex items-center justify-between gap-3 border-t border-ivory-300/70 pt-6">
-            <button type="button" onClick={() => goTo(index - 1)} disabled={index === 0} className={buttonClass('outline-dark')}>
-              <ArrowLeft aria-hidden="true" /> <span className="hidden sm:inline">Précédent</span>
-              <span className="sr-only sm:hidden">Question précédente</span>
+        {/* Always within reach, whatever the length of the answers. */}
+        <div className="sticky bottom-0 z-10 border-t border-forest-900/10 bg-ivory-50/95 backdrop-blur">
+          <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-3 sm:px-8">
+            <button
+              type="button"
+              onClick={() => goTo(index - 1)}
+              disabled={index === 0}
+              className={buttonClass('outline-dark', 'max-sm:w-12 max-sm:px-0')}
+            >
+              <ArrowLeft aria-hidden="true" />
+              <span className="max-sm:sr-only">Précédent</span>
             </button>
+            <p aria-live="polite" className="min-w-0 flex-1 text-center text-sm">
+              {answer !== undefined && (
+                <m.span
+                  key={question.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="inline-flex items-center gap-1.5 font-medium text-emerald-700"
+                >
+                  <Check aria-hidden="true" className="size-4 shrink-0" />
+                  {isPersisted() ? 'Enregistré' : 'Noté pour cette visite'}
+                </m.span>
+              )}
+            </p>
             {isLast ? (
               <button type="button" onClick={finish} className={buttonClass('primary')}>
-                Voir les résultats <ArrowRight aria-hidden="true" />
+                Voir mon rapport
               </button>
             ) : (
-              <button type="button" onClick={() => goTo(index + 1)} className={buttonClass('dark')}>
-                {answer === undefined ? 'Passer' : 'Suivant'} <ArrowRight aria-hidden="true" />
+              <button
+                type="button"
+                onClick={() => goTo(index + 1)}
+                className={buttonClass(answer === undefined ? 'outline-dark' : 'dark')}
+              >
+                {answer === undefined ? 'Passer' : 'Continuer'} <ArrowRight aria-hidden="true" />
               </button>
             )}
           </div>
-
-          <div className="mt-8 flex flex-col gap-4 text-sm text-ink-muted sm:flex-row sm:items-center sm:justify-between">
-            <p className="inline-flex items-center gap-2">
-              <HardDrive aria-hidden="true" className="size-4 text-emerald-700" />
-              {isPersisted() ? 'Progression enregistrée automatiquement sur cet appareil.' : 'Enregistrement local indisponible.'}
-            </p>
-            <div className="flex flex-wrap gap-x-5 gap-y-2">
-              {!isLast && answeredCount > 0 && (
-                <button type="button" onClick={finish} className="rounded font-semibold text-emerald-700 hover:text-forest-900">
-                  Voir les résultats
-                </button>
-              )}
-              <button
-                type="button"
-                onClick={() => setConfirmReset(true)}
-                disabled={answeredCount === 0}
-                className="inline-flex items-center gap-1.5 rounded hover:text-forest-900 disabled:opacity-40"
-              >
-                <RotateCcw aria-hidden="true" className="size-4" /> Réinitialiser
-              </button>
-              <Link to={diagnosticPaths.history} className="rounded hover:text-forest-900">
-                Historique
-              </Link>
-            </div>
-          </div>
         </div>
-      </section>
+      </div>
+
+      <QuestionMap
+        ref={mapRef}
+        assessment={assessment}
+        currentIndex={index}
+        onGoTo={(target) => {
+          mapRef.current?.close()
+          goTo(target)
+        }}
+        onClear={answer === undefined ? undefined : () => diagnosticActions.answer(id, question.id, null)}
+        onFinish={finish}
+        onReset={() => {
+          mapRef.current?.close()
+          setConfirmReset(true)
+        }}
+      />
 
       <ConfirmDialog
         open={confirmReset}
-        title="Réinitialiser le questionnaire ?"
+        title="Tout recommencer ?"
         confirmLabel="Effacer mes réponses"
         danger
         onClose={() => setConfirmReset(false)}
         onConfirm={() => {
-          diagnosticActions.reset(assessment.id)
+          userMoved.current = index !== 0
+          diagnosticActions.reset(id)
           setConfirmReset(false)
-          userMoved.current = true
         }}
       >
         <p>
-          Les {answeredCount} réponses de ce diagnostic seront effacées et vous reprendrez à la première question. Cette
-          action est définitive.
+          {answeredCount > 1 ? `Vos ${answeredCount} réponses seront effacées` : 'Votre réponse sera effacée'} et vous
+          reviendrez à la première question. Ce choix est définitif.
         </p>
       </ConfirmDialog>
     </>
+  )
+}
+
+function RadioMark() {
+  return (
+    <span
+      aria-hidden="true"
+      className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full ring-2 ring-ink-muted/70 ring-inset transition group-hover:ring-emerald-600/60 group-has-checked:bg-emerald-600 group-has-checked:ring-emerald-600"
+    >
+      <Check className="size-4 scale-50 text-ivory-50 opacity-0 transition duration-200 group-has-checked:scale-100 group-has-checked:opacity-100" />
+    </span>
   )
 }

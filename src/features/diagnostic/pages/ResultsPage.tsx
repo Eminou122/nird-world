@@ -1,21 +1,19 @@
-import { Archive, ArrowLeft, Info, PenLine, Printer, RotateCcw, TriangleAlert } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { Navigate, useNavigate, useParams } from 'react-router'
-import { ButtonLink, buttonClass } from '../../../components/ui/ButtonLink'
-import { questions } from '../data/questions'
-import { analyse } from '../engine/analysis'
-import { buildRecommendations, buildRoadmap } from '../engine/recommendationEngine'
-import { computeResult, isMaturityLevel } from '../engine/scoring'
-import { diagnosticActions, useDiagnosticStore } from '../hooks/useDiagnosticStore'
-import type { DimensionResult } from '../types/diagnostic'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router'
+import { ButtonLink } from '../../../components/ui/ButtonLink'
+import { Disclosure } from '../../../components/ui/Disclosure'
+import { buttonClass } from '../../../components/ui/buttonClass'
 import {
-  AnalysisPanels,
-  CoveragePanel,
-  DimensionBreakdown,
-  Methodology,
-  RecommendationCard,
+  CoverageDetails,
+  DimensionScores,
+  GoingWell,
+  MethodologyContent,
+  NeedsAttention,
+  NextStep,
+  RecommendationItem,
   Roadmap,
   ScoreSummary,
+  horizons,
 } from '../components/report'
 import {
   ConfirmDialog,
@@ -26,7 +24,13 @@ import {
   plural,
   priorityStyles,
 } from '../components/ui'
+import { questions } from '../data/questions'
+import { analyse } from '../engine/analysis'
+import { buildRecommendations, buildRoadmap } from '../engine/recommendationEngine'
+import { computeResult, isMaturityLevel } from '../engine/scoring'
+import { diagnosticActions, useDiagnosticStore } from '../hooks/useDiagnosticStore'
 import { diagnosticPaths } from '../paths'
+import type { DimensionResult } from '../types/diagnostic'
 
 const crumbs = [
   { label: 'Accueil', to: '/' },
@@ -35,11 +39,31 @@ const crumbs = [
   { label: 'Rapport' },
 ]
 
+/** The printed report is complete: open every collapsed section while printing, then restore them. */
+function useExpandedPrint() {
+  useEffect(() => {
+    let opened: HTMLDetailsElement[] = []
+    const expand = () => {
+      opened = [...document.querySelectorAll<HTMLDetailsElement>('main details:not([open])')]
+      opened.forEach((details) => (details.open = true))
+    }
+    const restore = () => opened.forEach((details) => (details.open = false))
+    window.addEventListener('beforeprint', expand)
+    window.addEventListener('afterprint', restore)
+    return () => {
+      window.removeEventListener('beforeprint', expand)
+      window.removeEventListener('afterprint', restore)
+    }
+  }, [])
+}
+
 export function ResultsPage() {
   const { id } = useParams()
   const store = useDiagnosticStore()
   const navigate = useNavigate()
+  const { state } = useLocation()
   const [confirmRestart, setConfirmRestart] = useState(false)
+  useExpandedPrint()
 
   const assessment = id
     ? store.assessments.find((a) => a.id === id)
@@ -63,14 +87,15 @@ export function ResultsPage() {
     return (
       <>
         <title>Rapport introuvable — NIRD WORLD</title>
-        <DiagnosticHeader crumbs={crumbs} eyebrow="Diagnostic d’indépendance numérique" title="Aucun rapport à afficher">
-          <p className="mt-4 max-w-xl text-lg text-ivory-100/75">
-            Ce rapport n’existe pas ou a été supprimé de cet appareil.
+        <DiagnosticHeader crumbs={crumbs} title="Aucun rapport ici">
+          <p className="mt-4 max-w-xl text-lg text-ink-muted">
+            Ce rapport a été supprimé, ou il se trouve sur un autre appareil. Vous pouvez en créer un en une quinzaine de
+            minutes.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-7 flex flex-wrap gap-3">
             <ButtonLink to={diagnosticPaths.intro}>Commencer un diagnostic</ButtonLink>
-            <ButtonLink to={diagnosticPaths.history} variant="outline-light">
-              Historique
+            <ButtonLink to={diagnosticPaths.history} variant="outline-dark">
+              Mes diagnostics
             </ButtonLink>
           </div>
         </DiagnosticHeader>
@@ -79,7 +104,8 @@ export function ResultsPage() {
   }
 
   const { result, analysis, recommendations, roadmap } = report
-  const typeLabel = institutionTypeLabel(assessment)
+  const { overall, band, coverage } = result
+  const justCompleted = (state as { justCompleted?: boolean } | null)?.justCompleted === true
 
   function review(index = 0) {
     diagnosticActions.open(assessment!.id, index)
@@ -99,157 +125,154 @@ export function ResultsPage() {
     navigate(diagnosticPaths.questionnaire)
   }
 
-  const priorityCounts = (['haute', 'moyenne', 'basse'] as const)
+  const priorityHint = (['haute', 'moyenne', 'basse'] as const)
     .map((priority) => ({ priority, count: recommendations.filter((r) => r.priority === priority).length }))
     .filter(({ count }) => count > 0)
+    .map(({ priority, count }) => `${count} en ${priorityStyles[priority].label.toLowerCase()}`)
+    .join(', ')
+
+  const roadmapHint = horizons
+    .filter(({ id: horizon }) => roadmap[horizon].length > 0)
+    .map(({ id: horizon, label }) => `${roadmap[horizon].length} ${label.charAt(0).toLowerCase()}${label.slice(1)}`)
+    .join(', ')
+
+  const toDo = result.dimensions.filter((d) => !d.valid)
+  const scored = overall !== null && band !== null
+  const quietAction = 'inline-flex min-h-11 items-center rounded font-semibold text-emerald-700 hover:text-forest-900'
 
   return (
     <>
       <title>{`Rapport — ${institutionLabel(assessment)} — NIRD WORLD`}</title>
 
-      <DiagnosticHeader
-        crumbs={crumbs}
-        eyebrow="Rapport de diagnostic d’indépendance numérique"
-        title={institutionLabel(assessment)}
-      >
-        <p className="mt-3 text-ivory-100/70">
-          {[typeLabel, `Mis à jour le ${formatDateTime(assessment.updatedAt)}`].filter(Boolean).join(' · ')}
+      <DiagnosticHeader crumbs={crumbs} title={institutionLabel(assessment)}>
+        {justCompleted && (
+          <p className="mt-2 text-lg font-semibold text-emerald-700">C’est terminé, merci&nbsp;! Voici votre rapport.</p>
+        )}
+        <p className="mt-1 text-ink-muted">
+          {institutionTypeLabel(assessment) && `${institutionTypeLabel(assessment)}. `}
+          Mis à jour le {formatDateTime(assessment.updatedAt)}
         </p>
-        <div className="mt-8 flex flex-wrap gap-3 print:hidden">
-          <button type="button" onClick={() => review()} className={buttonClass('outline-light')}>
-            <PenLine aria-hidden="true" /> Revoir les réponses
-          </button>
-          <button type="button" onClick={() => window.print()} className={buttonClass('outline-light')}>
-            <Printer aria-hidden="true" /> Imprimer ou enregistrer en PDF
-          </button>
-          <button type="button" onClick={() => setConfirmRestart(true)} className={buttonClass('outline-light')}>
-            <RotateCcw aria-hidden="true" /> Recommencer
-          </button>
-          <ButtonLink to={diagnosticPaths.history} variant="outline-light">
-            <Archive aria-hidden="true" /> Historique
-          </ButtonLink>
-        </div>
       </DiagnosticHeader>
 
-      <div className="bg-ivory-100 py-10 sm:py-14">
-        <div className="mx-auto max-w-6xl space-y-6 px-4 sm:px-8">
-          {result.valid && result.overall !== null ? (
+      <div className="bg-sage-100">
+        <div className="mx-auto max-w-5xl px-5 pb-14 sm:px-8 sm:pb-20">
+          {scored ? (
+            <ScoreSummary score={overall} band={band}>
+              <p className="mt-4 text-sm text-ivory-100/70">
+                Auto-évaluation indicative, d’après vos réponses. Ce n’est ni une certification ni un audit officiel.
+              </p>
+            </ScoreSummary>
+          ) : (
+            <section aria-labelledby="incomplet-title" className="rounded-3xl bg-ivory-50 p-7 sm:p-10">
+              <h2 id="incomplet-title" className="text-2xl font-medium text-forest-900 sm:text-3xl">
+                Encore quelques réponses
+              </h2>
+              <p className="mt-3 max-w-2xl text-lg leading-relaxed text-ink-muted">
+                Votre diagnostic est incomplet. Pour calculer un score juste, il faut au moins trois réponses notées par
+                sujet&nbsp;: {plural(toDo.length, 'sujet reste', 'sujets restent')} à compléter. Rien n’est compté comme un
+                zéro.
+              </p>
+              <button type="button" onClick={() => review(assessment.currentIndex)} className={buttonClass('primary', 'mt-6 print:hidden')}>
+                Reprendre le questionnaire
+              </button>
+            </section>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-ivory-50">
+        <div className="mx-auto max-w-5xl px-5 py-12 sm:px-8 sm:py-16">
+          {scored ? (
             <>
-              <div className="grid gap-6 lg:grid-cols-12">
-                <div className="lg:col-span-5">
-                  <ScoreSummary result={{ ...result, overall: result.overall }} />
-                  <p className="mt-4 flex gap-2.5 px-1 text-sm leading-relaxed text-ink-muted">
-                    <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-emerald-700" />
-                    Auto-évaluation indicative, fondée uniquement sur vos réponses. Ce résultat ne constitue ni une
-                    certification ni un audit officiel de l’établissement.
-                  </p>
-                </div>
-                <div className="lg:col-span-7">
-                  <DimensionBreakdown dimensions={result.dimensions} />
-                </div>
+              <div className="grid gap-12 md:grid-cols-2 md:gap-16">
+                <GoingWell analysis={analysis} />
+                <NeedsAttention analysis={analysis} />
               </div>
 
-              <CoveragePanel coverage={result.coverage} wide />
-              <AnalysisPanels analysis={analysis} />
+              <div className="mt-14">
+                <NextStep recommendation={recommendations[0]} />
+              </div>
 
-              <section aria-labelledby="recommandations-title" className="pt-8">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold tracking-[0.18em] text-emerald-700 uppercase">Plan d’action</p>
-                    <h2 id="recommandations-title" className="mt-2 text-3xl font-medium text-forest-900 sm:text-4xl">
-                      Recommandations personnalisées
-                    </h2>
-                    <p className="mt-2 max-w-2xl text-ink-muted">
-                      Chaque recommandation découle d’une réponse précise. Les réponses « Je ne sais pas » donnent lieu à
-                      une vérification, jamais à un constat de faiblesse.
-                    </p>
-                  </div>
-                  {priorityCounts.length > 0 && (
-                    <ul className="flex flex-wrap gap-2 text-xs font-semibold">
-                      {priorityCounts.map(({ priority, count }) => (
-                        <li key={priority} className={`rounded-full px-2.5 py-1 ring-1 ${priorityStyles[priority].className}`}>
-                          {count} · {priorityStyles[priority].label.replace('Priorité ', '')}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-                {recommendations.length === 0 ? (
-                  <p className="mt-8 rounded-2xl bg-ivory-50 p-6 leading-relaxed text-ink-muted ring-1 ring-ivory-300/80">
-                    Aucune faiblesse confirmée ni zone d’incertitude : toutes les pratiques notées sont établies ou
-                    avancées. Prochaine étape : maintenir ces pratiques, les documenter et refaire ce diagnostic chaque
-                    année.
-                  </p>
-                ) : (
-                  <ul className="mt-8 grid gap-5 md:grid-cols-2">
-                    {recommendations.map((recommendation) => (
-                      <li key={recommendation.id}>
-                        <RecommendationCard recommendation={recommendation} />
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-
-              <section aria-labelledby="feuille-de-route-title" className="pt-8">
-                <p className="text-xs font-semibold tracking-[0.18em] text-emerald-700 uppercase">Feuille de route</p>
-                <h2 id="feuille-de-route-title" className="mt-2 mb-8 text-3xl font-medium text-forest-900 sm:text-4xl">
-                  Par où commencer
+              <section aria-labelledby="approfondir-title" className="mt-16">
+                <h2 id="approfondir-title" className="text-2xl font-medium text-forest-900 sm:text-3xl">
+                  Pour aller plus loin
                 </h2>
-                <Roadmap roadmap={roadmap} />
+                <div className="mt-4 border-t border-forest-900/12">
+                  <Disclosure title="Les scores des cinq sujets" defaultOpen>
+                    <DimensionScores dimensions={result.dimensions} />
+                  </Disclosure>
+                  {recommendations.length > 0 && (
+                    <Disclosure title={`Toutes les recommandations (${recommendations.length})`} hint={priorityHint}>
+                      <p className="max-w-2xl leading-relaxed text-ink-muted">
+                        Chacune vient d’une de vos réponses. Un «&nbsp;Je ne sais pas&nbsp;» donne une vérification à faire,
+                        jamais un reproche.
+                      </p>
+                      <ul className="mt-2" data-recommendations>
+                        {recommendations.map((recommendation) => (
+                          <RecommendationItem key={recommendation.id} recommendation={recommendation} />
+                        ))}
+                      </ul>
+                    </Disclosure>
+                  )}
+                  {recommendations.length > 0 && (
+                    <Disclosure title="La feuille de route" hint={roadmapHint}>
+                      <Roadmap roadmap={roadmap} />
+                    </Disclosure>
+                  )}
+                  <Disclosure title="Ce que couvrent vos réponses" hint={`${coverage.percent} % des questions applicables sont notées`}>
+                    <CoverageDetails coverage={coverage} />
+                  </Disclosure>
+                  <Disclosure title="Comment ce score est calculé">
+                    <MethodologyContent band={band} />
+                  </Disclosure>
+                </div>
               </section>
-
-              <Methodology />
             </>
           ) : (
             <>
-              <section
-                aria-labelledby="incomplet-title"
-                className="flex flex-col gap-4 rounded-2xl bg-gold-400/15 p-6 ring-1 ring-gold-400/50 sm:flex-row sm:p-7"
-              >
-                <TriangleAlert aria-hidden="true" className="size-6 shrink-0 text-gold-700" />
-                <div className="flex-1">
-                  <h2 id="incomplet-title" className="text-2xl font-medium text-forest-900">
-                    Diagnostic incomplet
-                  </h2>
-                  <p className="mt-2 leading-relaxed text-ink-muted">
-                    Le score global n’est calculé que lorsque chaque dimension compte au moins trois réponses notées
-                    (niveaux 0 à 4). Une dimension manquante n’est jamais comptée comme zéro.{' '}
-                    {plural(
-                      result.dimensions.filter((d) => !d.valid).length,
-                      'dimension doit encore être complétée.',
-                      'dimensions doivent encore être complétées.',
-                    )}
-                  </p>
-                  <button type="button" onClick={() => review(assessment.currentIndex)} className={buttonClass('dark', 'mt-5 print:hidden')}>
-                    <ArrowLeft aria-hidden="true" /> Reprendre le questionnaire
-                  </button>
-                </div>
-              </section>
-              <div className="grid gap-6 lg:grid-cols-12">
-                <div className="lg:col-span-7">
-                  <DimensionBreakdown dimensions={result.dimensions} onComplete={completeDimension} />
-                </div>
-                <div className="lg:col-span-5">
-                  <CoveragePanel coverage={result.coverage} />
-                </div>
+              <h2 className="text-2xl font-medium text-forest-900 sm:text-3xl">Où vous en êtes, sujet par sujet</h2>
+              <div className="mt-6">
+                <DimensionScores dimensions={result.dimensions} onComplete={completeDimension} />
+              </div>
+              <div className="mt-8 border-t border-forest-900/12">
+                <Disclosure title="Ce que couvrent vos réponses" hint={`${coverage.percent} % des questions applicables sont notées`}>
+                  <CoverageDetails coverage={coverage} />
+                </Disclosure>
+                <Disclosure title="Comment le score est calculé">
+                  <MethodologyContent />
+                </Disclosure>
               </div>
             </>
           )}
+
+          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-2 print:hidden">
+            <button type="button" onClick={() => window.print()} className={buttonClass('dark')}>
+              Imprimer ou enregistrer en PDF
+            </button>
+            <button type="button" onClick={() => review()} className={quietAction}>
+              Revoir mes réponses
+            </button>
+            <button type="button" onClick={() => setConfirmRestart(true)} className={quietAction}>
+              Refaire le diagnostic
+            </button>
+            <Link to={diagnosticPaths.history} className={quietAction}>
+              Mes diagnostics
+            </Link>
+            <Link to="/village" className={quietAction}>
+              Retour au village
+            </Link>
+          </div>
         </div>
       </div>
 
       <ConfirmDialog
         open={confirmRestart}
-        title="Commencer un nouveau diagnostic ?"
-        confirmLabel="Nouveau diagnostic"
+        title="Refaire le diagnostic ?"
+        confirmLabel="Commencer"
         onClose={() => setConfirmRestart(false)}
         onConfirm={restart}
       >
-        <p>
-          Un nouveau questionnaire vierge sera créé pour {institutionLabel(assessment)}. Ce rapport reste disponible
-          dans l’historique.
-        </p>
+        <p>Vous partirez d’un questionnaire vierge. Ce rapport reste disponible dans «&nbsp;Mes diagnostics&nbsp;».</p>
       </ConfirmDialog>
     </>
   )

@@ -1,11 +1,9 @@
-import { ArrowRight, FileText, Play, Plus, Trash } from 'lucide-react'
+import { Trash } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
-import { ButtonLink, buttonClass } from '../../../components/ui/ButtonLink'
-import { questions } from '../data/questions'
-import { computeResult } from '../engine/scoring'
-import { diagnosticActions, useDiagnosticStore } from '../hooks/useDiagnosticStore'
-import type { Assessment } from '../types/diagnostic'
+import { useNavigate } from 'react-router'
+import { ButtonLink } from '../../../components/ui/ButtonLink'
+import { buttonClass } from '../../../components/ui/buttonClass'
+import { BuildingIllustration } from '../../village/BuildingIllustration'
 import {
   ConfirmDialog,
   DiagnosticHeader,
@@ -16,7 +14,12 @@ import {
   institutionLabel,
   institutionTypeLabel,
 } from '../components/ui'
+import { bandLines } from '../data/guidance'
+import { questions } from '../data/questions'
+import { computeResult } from '../engine/scoring'
+import { diagnosticActions, useDiagnosticStore } from '../hooks/useDiagnosticStore'
 import { diagnosticPaths } from '../paths'
+import type { Assessment } from '../types/diagnostic'
 
 export function HistoryPage() {
   const store = useDiagnosticStore()
@@ -32,49 +35,39 @@ export function HistoryPage() {
 
   return (
     <>
-      <title>Historique des diagnostics — NIRD WORLD</title>
+      <title>Mes diagnostics — NIRD WORLD</title>
       <DiagnosticHeader
         crumbs={[
           { label: 'Accueil', to: '/' },
           { label: 'Le village', to: '/village' },
           { label: 'École', to: diagnosticPaths.intro },
-          { label: 'Historique' },
+          { label: 'Mes diagnostics' },
         ]}
-        eyebrow="Diagnostic d’indépendance numérique"
-        title="Historique des diagnostics"
+        title="Mes diagnostics"
       >
-        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-ivory-100/75">
-          Les diagnostics enregistrés dans ce navigateur. Ils ne sont partagés avec personne. Supprimer un diagnostic
-          l’efface définitivement de cet appareil.
-        </p>
+        <p className="mt-2 max-w-2xl text-lg leading-relaxed text-ink-muted">Ils sont enregistrés dans ce navigateur, et nulle part ailleurs.</p>
       </DiagnosticHeader>
 
-      <div className="bg-ivory-100 py-10 sm:py-14">
-        <div className="mx-auto max-w-5xl space-y-6 px-4 sm:px-8">
+      <div className="bg-ivory-50">
+        <div className="mx-auto max-w-5xl space-y-6 px-5 py-10 sm:px-8 sm:py-14">
           <StorageNotice />
 
           {sorted.length === 0 ? (
-            <div className="rounded-2xl bg-ivory-50 p-8 text-center ring-1 ring-ivory-300/80">
-              <FileText aria-hidden="true" className="mx-auto size-8 text-emerald-700" />
-              <h2 className="mt-4 text-2xl font-medium text-forest-900">Aucun diagnostic enregistré</h2>
-              <p className="mt-2 text-ink-muted">Vos diagnostics apparaîtront ici dès que vous en aurez commencé un.</p>
+            <div className="flex flex-col items-center py-6 text-center">
+              <BuildingIllustration slug="ecole" className="h-40 w-auto" />
+              <h2 className="mt-6 text-2xl font-medium text-forest-900">Pas encore de diagnostic</h2>
+              <p className="mt-2 max-w-md leading-relaxed text-ink-muted">
+                Répondez à vingt questions sur votre établissement&nbsp;: votre rapport vous attendra ici.
+              </p>
               <ButtonLink to={diagnosticPaths.intro} className="mt-6">
-                <Play aria-hidden="true" /> Commencer un diagnostic
+                Commencer un diagnostic
               </ButtonLink>
             </div>
           ) : (
             <>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-2xl font-medium text-forest-900">
-                  {sorted.length} diagnostic{sorted.length > 1 ? 's' : ''}
-                </h2>
-                <ButtonLink to={diagnosticPaths.intro} variant="dark">
-                  <Plus aria-hidden="true" /> Nouveau diagnostic
-                </ButtonLink>
-              </div>
-              <ul className="space-y-4">
+              <ul className="grid gap-5 md:grid-cols-2">
                 {sorted.map((assessment) => (
-                  <HistoryItem
+                  <HistoryCard
                     key={assessment.id}
                     assessment={assessment}
                     onResume={() => resume(assessment.id)}
@@ -82,6 +75,9 @@ export function HistoryPage() {
                   />
                 ))}
               </ul>
+              <ButtonLink to={diagnosticPaths.intro} variant="outline-dark">
+                Nouveau diagnostic
+              </ButtonLink>
             </>
           )}
         </div>
@@ -100,8 +96,8 @@ export function HistoryPage() {
       >
         {toDelete && (
           <p>
-            Le diagnostic « {institutionLabel(toDelete)} » du {formatDate(toDelete.createdAt)} et toutes ses réponses
-            seront effacés de cet appareil. Cette action est irréversible.
+            «&nbsp;{institutionLabel(toDelete)}&nbsp;», du {formatDate(toDelete.createdAt)}, et toutes ses réponses seront
+            effacés de cet appareil. Ce choix est définitif.
           </p>
         )}
       </ConfirmDialog>
@@ -109,71 +105,75 @@ export function HistoryPage() {
   )
 }
 
-function HistoryItem({ assessment, onResume, onDelete }: { assessment: Assessment; onResume: () => void; onDelete: () => void }) {
-  const result = computeResult(assessment.answers)
+function HistoryCard({ assessment, onResume, onDelete }: { assessment: Assessment; onResume: () => void; onDelete: () => void }) {
+  const { overall, band } = computeResult(assessment.answers)
   const answered = questions.filter((q) => assessment.answers[q.id] !== undefined).length
   const typeLabel = institutionTypeLabel(assessment)
   const finished = assessment.completedAt !== null
+  const label = institutionLabel(assessment)
 
   return (
-    <li className="flex flex-col gap-5 rounded-2xl bg-ivory-50 p-5 ring-1 ring-ivory-300/80 sm:flex-row sm:items-center sm:p-6">
-      <div className="shrink-0 sm:w-44">
-        {result.overall !== null && result.band ? (
-          <>
-            <p className="flex items-baseline gap-1.5">
-              <span className="font-display text-5xl leading-none text-forest-900 tabular-nums">{result.overall}</span>
-              <span className="text-sm text-ink-muted">/ 100</span>
-            </p>
-            <p className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-forest-900">
-              <span aria-hidden="true" className="size-2.5 rounded-full" style={{ background: bandColors[result.band.id] }} />
-              {result.band.label}
-            </p>
-          </>
-        ) : (
-          <span className="text-sm leading-snug text-ink-muted">
-            <span className="block font-display text-2xl text-forest-900 tabular-nums">
-              {answered}/{questions.length}
-            </span>
-            réponses · score non calculable
-          </span>
-        )}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-xl font-medium text-forest-900">{institutionLabel(assessment)}</h3>
-          <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-              finished ? 'bg-emerald-600/10 text-emerald-700' : 'bg-gold-400/20 text-gold-700'
-            }`}
-          >
-            {finished ? 'Terminé' : 'En cours'}
-          </span>
+    <li className="flex flex-col rounded-3xl bg-sage-100 p-6 sm:p-7">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl leading-tight font-medium text-forest-900">{label}</h2>
+          <p className="mt-1 text-ink-muted">
+            <span className={`font-semibold ${finished ? 'text-emerald-700' : 'text-gold-700'}`}>{finished ? 'Terminé' : 'En cours'}</span>
+            {typeLabel && `, ${typeLabel.toLowerCase()}`}
+          </p>
+          <p className="text-sm text-ink-muted">
+            Commencé le {formatDate(assessment.createdAt)}, modifié le {formatDateTime(assessment.updatedAt)}
+          </p>
         </div>
-        <p className="mt-1 text-sm text-ink-muted">
-          {[typeLabel, `Commencé le ${formatDate(assessment.createdAt)}`, `modifié le ${formatDateTime(assessment.updatedAt)}`]
-            .filter(Boolean)
-            .join(' · ')}
-        </p>
-      </div>
-
-      <div className="flex flex-wrap gap-2">
-        {!finished && (
-          <button type="button" onClick={onResume} className={buttonClass('dark')}>
-            Continuer <ArrowRight aria-hidden="true" />
-          </button>
-        )}
-        <Link to={diagnosticPaths.results(assessment.id)} className={buttonClass(finished ? 'dark' : 'outline-dark')}>
-          Voir le rapport
-        </Link>
         <button
           type="button"
           onClick={onDelete}
-          aria-label={`Supprimer le diagnostic « ${institutionLabel(assessment)} »`}
-          className={buttonClass('outline-dark', 'px-3.5 text-[#8a3622]')}
+          aria-label={`Supprimer le diagnostic « ${label} »`}
+          className="-mt-2 -mr-2 grid size-11 shrink-0 place-items-center rounded-full text-ink-muted hover:bg-sage-200 hover:text-[#8a3622]"
         >
-          <Trash aria-hidden="true" />
+          <Trash aria-hidden="true" className="size-4.5" />
         </button>
+      </div>
+
+      <div className="mt-5 flex-1">
+        {overall !== null && band ? (
+          <>
+            <p className="flex items-baseline gap-3">
+              <span className="font-display text-6xl leading-none text-forest-900 tabular-nums">{overall}</span>
+              <span className="flex items-center gap-2 text-lg font-semibold text-forest-900">
+                <span aria-hidden="true" className="size-3 rounded-full" style={{ background: bandColors[band.id] }} />
+                {band.label}
+              </span>
+            </p>
+            <p className="mt-3 leading-relaxed text-ink-muted">{bandLines[band.id]}</p>
+          </>
+        ) : (
+          <>
+            <div aria-hidden="true" className="h-2.5 overflow-hidden rounded-full bg-sage-300">
+              <div className="h-full rounded-full bg-gold-400" style={{ width: `${(answered / questions.length) * 100}%` }} />
+            </div>
+            <p className="mt-3 text-ink-muted">
+              {answered} réponse{answered > 1 ? 's' : ''} sur {questions.length}. Le score apparaîtra quand il y en aura assez.
+            </p>
+          </>
+        )}
+      </div>
+
+      <div className="mt-6 flex flex-wrap gap-3">
+        {finished ? (
+          <ButtonLink to={diagnosticPaths.results(assessment.id)} variant="dark">
+            Voir le rapport
+          </ButtonLink>
+        ) : (
+          <>
+            <button type="button" onClick={onResume} className={buttonClass('primary')}>
+              Reprendre
+            </button>
+            <ButtonLink to={diagnosticPaths.results(assessment.id)} variant="outline-dark">
+              Voir le rapport
+            </ButtonLink>
+          </>
+        )}
       </div>
     </li>
   )

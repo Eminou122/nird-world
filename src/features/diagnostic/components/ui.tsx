@@ -1,7 +1,7 @@
 import { Accessibility, Code, Database, Info, Landmark, Recycle, type LucideIcon } from 'lucide-react'
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { Breadcrumbs, type Crumb } from '../../../components/navigation/Breadcrumbs'
-import { buttonClass } from '../../../components/ui/ButtonLink'
+import { buttonClass } from '../../../components/ui/buttonClass'
 import { institutionTypes } from '../data/questions'
 import { loadStatus, isPersisted } from '../hooks/useDiagnosticStore'
 import type { Assessment, BandId, DimensionId, Priority } from '../types/diagnostic'
@@ -41,25 +41,14 @@ export const institutionLabel = (assessment: Assessment) => assessment.instituti
 export const institutionTypeLabel = (assessment: Assessment) =>
   assessment.institutionType ? institutionTypes[assessment.institutionType] : null
 
-export function DiagnosticHeader({
-  crumbs,
-  eyebrow,
-  title,
-  children,
-}: {
-  crumbs: Crumb[]
-  eyebrow: ReactNode
-  title: ReactNode
-  children?: ReactNode
-}) {
+export function DiagnosticHeader({ crumbs, title, children }: { crumbs: Crumb[]; title: ReactNode; children?: ReactNode }) {
   return (
-    <section className="bg-forest-900 text-ivory-50">
-      <div className="mx-auto max-w-6xl px-5 pt-10 pb-12 sm:px-8">
+    <section className="bg-sage-100">
+      <div className="mx-auto max-w-5xl px-5 pt-8 pb-10 sm:px-8">
         <div className="print:hidden">
-          <Breadcrumbs onDark items={crumbs} />
+          <Breadcrumbs items={crumbs} />
         </div>
-        <p className="mt-8 text-xs font-semibold tracking-[0.16em] text-gold-400 uppercase">{eyebrow}</p>
-        <h1 className="mt-3 text-4xl leading-tight font-medium sm:text-5xl">{title}</h1>
+        <h1 className="mt-5 text-4xl leading-tight font-medium text-forest-900 sm:text-5xl">{title}</h1>
         {children}
       </div>
     </section>
@@ -124,11 +113,11 @@ export function StorageNotice() {
   const messages: string[] = []
   if (loadStatus === 'recovered')
     messages.push(
-      'Certaines données enregistrées sur cet appareil étaient illisibles ou d’un ancien format. Elles ont été mises de côté ; les diagnostics valides ont été conservés.',
+      'Certaines données enregistrées sur cet appareil n’ont pas pu être lues. Elles ont été mises de côté, et vos diagnostics valides sont toujours là.',
     )
   if (!isPersisted())
     messages.push(
-      'Votre navigateur bloque l’enregistrement local : vos réponses seront perdues à la fermeture de la page.',
+      'Votre navigateur refuse l’enregistrement : gardez cette page ouverte jusqu’à la fin, sinon vos réponses seront perdues.',
     )
   if (messages.length === 0) return null
   return (

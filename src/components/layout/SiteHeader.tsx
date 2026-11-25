@@ -1,4 +1,4 @@
-import { ArrowRight, Menu, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink } from 'react-router'
 import { Logo } from '../ui/Logo'
@@ -35,7 +35,7 @@ export function SiteHeader() {
               end={item.end}
               onClick={close}
               className={({ isActive }) =>
-                `${className} ${isActive ? 'bg-ivory-50/10 text-gold-300' : 'text-ivory-100/80 hover:bg-ivory-50/5 hover:text-ivory-50'}`
+                `${className} ${isActive ? 'bg-sage-200 text-forest-900' : 'text-ink-muted hover:bg-sage-100 hover:text-forest-900'}`
               }
             >
               {item.label}
@@ -45,7 +45,7 @@ export function SiteHeader() {
       }
       return (
         <li key={item.to}>
-          <Link to={item.to} onClick={close} className={`${className} text-ivory-100/80 hover:bg-ivory-50/5 hover:text-ivory-50`}>
+          <Link to={item.to} onClick={close} className={`${className} text-ink-muted hover:bg-sage-100 hover:text-forest-900`}>
             {item.label}
           </Link>
         </li>
@@ -53,10 +53,10 @@ export function SiteHeader() {
     })
 
   return (
-    <header className="sticky top-0 z-40 print:hidden border-b border-ivory-50/10 bg-forest-900/95 backdrop-blur supports-[backdrop-filter]:bg-forest-900/85">
+    <header className="sticky top-0 z-40 print:hidden border-b border-forest-900/10 bg-ivory-50/95 backdrop-blur supports-[backdrop-filter]:bg-ivory-50/85">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-5 sm:px-8">
         <Link to="/" onClick={close} className="rounded-md" aria-label="NIRD WORLD — accueil">
-          <Logo />
+          <Logo onDark={false} />
         </Link>
 
         <nav aria-label="Navigation principale" className="hidden lg:block">
@@ -65,14 +65,14 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-2">
           <Link
-            to="/village"
-            className="hidden min-h-10 items-center gap-2 rounded-full bg-gold-400 px-4 text-sm font-semibold text-forest-900 transition-colors hover:bg-gold-300 sm:inline-flex"
+            to="/village/ecole"
+            className="hidden min-h-10 items-center gap-2 rounded-full bg-forest-900 px-4 text-sm font-semibold text-ivory-50 transition-colors hover:bg-forest-800 sm:inline-flex"
           >
-            Explorer le village <ArrowRight aria-hidden="true" className="size-4" />
+            Faire le diagnostic
           </Link>
           <button
             type="button"
-            className="inline-flex size-11 items-center justify-center rounded-full text-ivory-50 hover:bg-ivory-50/10 lg:hidden"
+            className="inline-flex size-11 items-center justify-center rounded-full text-forest-900 hover:bg-sage-200 lg:hidden"
             aria-expanded={open}
             aria-controls="menu-mobile"
             onClick={() => setOpen((value) => !value)}
@@ -84,14 +84,14 @@ export function SiteHeader() {
       </div>
 
       {open && (
-        <nav id="menu-mobile" aria-label="Navigation principale" className="border-t border-ivory-50/10 px-5 pt-2 pb-5 sm:px-8 lg:hidden">
+        <nav id="menu-mobile" aria-label="Navigation principale" className="border-t border-forest-900/10 px-5 pt-2 pb-5 sm:px-8 lg:hidden">
           <ul className="space-y-1">{renderLinks(true)}</ul>
           <Link
-            to="/village"
+            to="/village/ecole"
             onClick={close}
-            className="mt-4 flex min-h-11 items-center justify-center gap-2 rounded-full bg-gold-400 px-4 font-semibold text-forest-900 sm:hidden"
+            className="mt-4 flex min-h-11 items-center justify-center gap-2 rounded-full bg-forest-900 px-4 font-semibold text-ivory-50 sm:hidden"
           >
-            Explorer le village <ArrowRight aria-hidden="true" className="size-4" />
+            Faire le diagnostic
           </Link>
         </nav>
       )}

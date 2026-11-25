@@ -1,5 +1,4 @@
-import { useNavigate } from 'react-router'
-import { buildingPath, buildings, type BuildingSlug } from '../../../data/buildings'
+import { buildings, type BuildingSlug } from '../../../data/buildings'
 import { buildingArt } from './buildings'
 import { compareDepth, groundPlane, points, project, viewBoxAttr, type Footprint } from './iso'
 import { GRID, VILLAGE_VIEWBOX, garden, paths, placements, plaza, pond, scenery, turbine } from './layout'
@@ -30,13 +29,17 @@ const gridLines = Array.from({ length: GRID - 1 }, (_, i) => i + 1)
 interface VillageSceneProps {
   activeSlug: BuildingSlug | null
   onActiveChange: (slug: BuildingSlug | null) => void
+  /** Mouse or touch click on a building (keyboard users get the pins and the list). */
+  onSelect: (slug: BuildingSlug) => void
+  /** Building being presented: stays highlighted when the pointer leaves. */
+  selectedSlug?: BuildingSlug | null
   /** Accessible description; when omitted the drawing is treated as decorative. */
   label?: string
   className?: string
 }
 
-export function VillageScene({ activeSlug, onActiveChange, label, className }: VillageSceneProps) {
-  const navigate = useNavigate()
+export function VillageScene({ activeSlug, onActiveChange, onSelect, selectedSlug = null, label, className }: VillageSceneProps) {
+  const isLit = (slug: BuildingSlug) => slug === activeSlug || slug === selectedSlug
   const view = VILLAGE_VIEWBOX
 
   return (
@@ -53,7 +56,7 @@ export function VillageScene({ activeSlug, onActiveChange, label, className }: V
       {/* Table shadow and wooden base */}
       <polygon
         points={points([0, 0, -0.9], [GRID, 0, -0.9], [GRID, GRID, -0.9], [0, GRID, -0.9])}
-        fill="rgba(5, 15, 12, 0.45)"
+        fill="rgba(20, 45, 39, 0.22)"
         filter="url(#village-drop)"
       />
       <Slab w={GRID} d={GRID} />
@@ -130,7 +133,7 @@ export function VillageScene({ activeSlug, onActiveChange, label, className }: V
           return (
             <rect
               key={slug}
-              className={`village-ring${activeSlug === slug ? ' is-active' : ''}`}
+              className={`village-ring${isLit(slug) ? ' is-active' : ''}`}
               x={f.x - 0.35}
               y={f.y - 0.35}
               width={f.w + 0.7}
@@ -156,11 +159,11 @@ export function VillageScene({ activeSlug, onActiveChange, label, className }: V
               <g
                 key={slug}
                 transform={`translate(${X} ${Y})`}
-                className={`village-building${activeSlug === slug ? ' is-active' : ''}`}
+                className={`village-building${isLit(slug) ? ' is-active' : ''}`}
                 pointerEvents="visiblePainted"
                 onPointerEnter={() => onActiveChange(slug)}
                 onPointerLeave={() => onActiveChange(null)}
-                onClick={() => navigate(buildingPath(slug))}
+                onClick={() => onSelect(slug)}
               >
                 <g className="village-building__lift">
                   <Art />

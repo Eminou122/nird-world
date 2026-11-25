@@ -30,7 +30,8 @@ export function RootLayout() {
         <Outlet />
       </main>
       <SiteFooter />
-      <ScrollRestoration />
+      {/* Every direct page load shares the key "default": keep one scroll position per page instead. */}
+      <ScrollRestoration getKey={({ key, pathname }) => (key === 'default' ? pathname : key)} />
     </div>
   )
 }

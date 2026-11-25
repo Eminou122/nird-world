@@ -1,25 +1,29 @@
-import { ArrowRight } from 'lucide-react'
-import { Link } from 'react-router'
-import { buildingPath, buildings, type Building, type BuildingSlug } from '../../data/buildings'
+import { buildings, type Building, type BuildingSlug } from '../../data/buildings'
 import { buildingArt } from './scene/buildings'
 import { toPercent } from './scene/iso'
 import { VILLAGE_VIEWBOX, placements } from './scene/layout'
 import { VillageScene } from './scene/VillageScene'
 
+export const pinId = (slug: BuildingSlug) => `village-pin-${slug}`
+
 interface VillageMapProps {
   activeSlug: BuildingSlug | null
+  selectedSlug: BuildingSlug | null
   onActiveChange: (slug: BuildingSlug | null) => void
+  onSelect: (slug: BuildingSlug) => void
 }
 
-/** The interactive village: illustration plus keyboard-accessible pins with tooltips. */
-export function VillageMap({ activeSlug, onActiveChange }: VillageMapProps) {
+/** The interactive village: illustration plus keyboard-accessible pins. Selecting a place presents it; entering is a second step. */
+export function VillageMap({ activeSlug, selectedSlug, onActiveChange, onSelect }: VillageMapProps) {
   return (
     <div className="relative">
       <VillageScene
         className="block h-auto w-full"
         label="Plan illustré du village NIRD WORLD : six lieux reliés par des allées autour d’une place centrale."
         activeSlug={activeSlug}
+        selectedSlug={selectedSlug}
         onActiveChange={onActiveChange}
+        onSelect={onSelect}
       />
       <ul className="pointer-events-none absolute inset-0" aria-label="Bâtiments du village">
         {buildings.map((building) => (
@@ -27,7 +31,10 @@ export function VillageMap({ activeSlug, onActiveChange }: VillageMapProps) {
             key={building.slug}
             building={building}
             active={activeSlug === building.slug}
+            selected={selectedSlug === building.slug}
+            suggested={selectedSlug === null && building.slug === 'ecole'}
             onActiveChange={onActiveChange}
+            onSelect={onSelect}
           />
         ))}
       </ul>
@@ -38,70 +45,67 @@ export function VillageMap({ activeSlug, onActiveChange }: VillageMapProps) {
 interface MapPinProps {
   building: Building
   active: boolean
+  selected: boolean
+  suggested: boolean
   onActiveChange: (slug: BuildingSlug | null) => void
+  onSelect: (slug: BuildingSlug) => void
 }
 
-function MapPin({ building, active, onActiveChange }: MapPinProps) {
-  const { slug, number, name, theme, summary } = building
+function MapPin({ building, active, selected, suggested, onActiveChange, onSelect }: MapPinProps) {
+  const { slug, name, question, icon: Icon } = building
   const { w, d, h } = buildingArt[slug]
   const { x, y } = placements[slug]
   const { left, top } = toPercent(VILLAGE_VIEWBOX, x + w / 2, y + d / 2, h + 0.2)
   const tooltipId = `village-tooltip-${slug}`
 
-  // Keep tooltips inside the map: beside the pin near the top edge, otherwise above it.
+  // Keep the question inside the map: beside the pin near the top edge, otherwise above it.
   const placement =
     top < 25
       ? 'left-full top-1/2 ml-3 -translate-y-1/2'
       : left < 28
-        ? 'bottom-full left-0 mb-3'
+        ? 'bottom-full left-0 mb-2'
         : left > 72
-          ? 'bottom-full right-0 mb-3'
-          : 'bottom-full left-1/2 mb-3 -translate-x-1/2'
+          ? 'bottom-full right-0 mb-2'
+          : 'bottom-full left-1/2 mb-2 -translate-x-1/2'
 
   const activate = () => onActiveChange(slug)
   const deactivate = () => onActiveChange(null)
 
+  const tone = selected
+    ? 'bg-forest-900 text-ivory-50'
+    : active || suggested
+      ? 'bg-gold-400 text-forest-900'
+      : 'bg-ivory-50 text-forest-900'
+
   return (
-    <li className="absolute" style={{ left: `${left}%`, top: `${top}%` }}>
+    <li className={`absolute ${active ? 'z-10' : ''}`} style={{ left: `${left}%`, top: `${top}%` }}>
       <div className="relative flex -translate-x-1/2 -translate-y-full flex-col items-center">
-        <Link
-          to={buildingPath(slug)}
+        <button
+          type="button"
+          id={pinId(slug)}
+          aria-pressed={selected}
           aria-describedby={tooltipId}
+          onClick={() => onSelect(slug)}
           onPointerEnter={activate}
           onPointerLeave={deactivate}
           onFocus={activate}
           onBlur={deactivate}
-          className={`pointer-events-auto inline-flex min-h-9 min-w-9 items-center justify-center gap-2 rounded-full border p-1 text-sm font-semibold shadow-soft transition-colors duration-200 sm:pr-3.5 ${
-            active
-              ? 'border-gold-400 bg-gold-400 text-forest-900'
-              : 'border-ivory-50/70 bg-ivory-50/95 text-forest-900 hover:bg-ivory-50'
-          }`}
+          className={`pointer-events-auto inline-flex size-11 items-center justify-center gap-2 rounded-full text-sm font-semibold shadow-soft transition-colors duration-200 sm:h-10 sm:w-auto sm:px-3.5 ${tone}`}
         >
-          <span
-            className={`grid size-7 place-items-center rounded-full text-xs tabular-nums transition-colors ${
-              active ? 'bg-forest-900 text-gold-300' : 'bg-forest-900 text-ivory-50'
-            }`}
-          >
-            {number}
-          </span>
+          <Icon aria-hidden="true" className="size-4.5 sm:size-4" />
           <span className="sr-only sm:not-sr-only">{name}</span>
-        </Link>
-        <span aria-hidden="true" className={`h-3 w-px transition-colors ${active ? 'bg-gold-400' : 'bg-ivory-50/80'}`} />
+        </button>
+        <span aria-hidden="true" className={`h-2.5 w-0.5 transition-colors sm:h-3 ${selected ? 'bg-forest-900' : active || suggested ? 'bg-gold-400' : 'bg-ivory-50'}`} />
 
-        <div
+        <p
           id={tooltipId}
           role="tooltip"
-          className={`pointer-events-none absolute z-10 hidden w-64 rounded-xl bg-ivory-50 p-4 text-left shadow-lift ring-1 ring-forest-900/10 transition duration-200 md:block ${placement} ${
-            active ? 'visible opacity-100' : 'invisible opacity-0'
+          className={`pointer-events-none absolute z-10 hidden w-max max-w-64 rounded-xl bg-forest-900 px-4 py-2.5 font-display text-lg leading-snug text-ivory-50 shadow-lift transition duration-200 md:block ${placement} ${
+            active && !selected ? 'visible opacity-100' : 'invisible opacity-0'
           }`}
         >
-          <p className="text-xs font-semibold tracking-[0.14em] text-emerald-700 uppercase">{theme}</p>
-          <p className="mt-1 font-display text-xl text-forest-900">{name}</p>
-          <p className="mt-1.5 text-sm leading-snug text-ink-muted">{summary}</p>
-          <p className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
-            Découvrir ce lieu <ArrowRight aria-hidden="true" className="size-4" />
-          </p>
-        </div>
+          {question}
+        </p>
       </div>
     </li>
   )

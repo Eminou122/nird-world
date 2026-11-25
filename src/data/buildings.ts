@@ -50,10 +50,16 @@ export interface Building {
   number: string
   name: string
   theme: string
+  /** The plain question this place answers: how every building introduces itself. */
+  question: string
   summary: string
   description: string
   icon: LucideIcon
   pillar: PillarId
+  /** One sentence: why this matters for digital independence. */
+  why: string
+  /** False while the place only has a presentation page. */
+  open: boolean
   missionLink: string
   planned: readonly [PlannedFeature, PlannedFeature, PlannedFeature]
 }
@@ -85,11 +91,14 @@ export const buildings: readonly Building[] = [
     number: '01',
     name: 'École',
     theme: 'Diagnostic numérique',
+    question: 'Où en est notre établissement ?',
     summary: 'Évaluer où en est votre établissement.',
     description:
       'Point de départ du parcours, l’École accueille un diagnostic guidé qui mesure le degré d’indépendance numérique d’un établissement : logiciels, données, matériel, accessibilité et gouvernance.',
     icon: GraduationCap,
     pillar: 'responsable',
+    why: 'On ne change bien que ce que l’on comprend : tout commence par un état des lieux honnête.',
+    open: true,
     missionLink:
       'Avant de transformer, il faut comprendre. Le diagnostic donne à chaque établissement une image honnête de ses dépendances et oriente la suite du parcours dans le village.',
     planned: [
@@ -115,11 +124,14 @@ export const buildings: readonly Building[] = [
     number: '02',
     name: 'Bibliothèque',
     theme: 'Logiciels libres et ressources',
+    question: 'Quels outils peut-on choisir librement ?',
     summary: 'Trouver des alternatives libres et éprouvées.',
     description:
       'La Bibliothèque rassemblera des logiciels libres adaptés à l’école, des retours d’expérience et des guides pour accompagner leur adoption en classe comme dans l’administration.',
     icon: Library,
     pillar: 'inclusif',
+    why: 'Un logiciel libre s’étudie, se partage et s’adapte : personne ne peut vous en retirer l’usage.',
+    open: false,
     missionLink:
       'Les logiciels libres se partagent, s’adaptent et s’étudient. Ils permettent à chaque établissement, quels que soient ses moyens, de choisir ses outils plutôt que de les subir.',
     planned: [
@@ -145,11 +157,14 @@ export const buildings: readonly Building[] = [
     number: '03',
     name: 'Laboratoire',
     theme: 'Cybersécurité et protection des données',
+    question: 'Nos données sont-elles à l’abri ?',
     summary: 'Protéger les élèves, les équipes et leurs données.',
     description:
       'Le Laboratoire proposera des repères concrets pour sécuriser les usages numériques de l’établissement et protéger les données personnelles des élèves et des personnels.',
     icon: ShieldCheck,
     pillar: 'responsable',
+    why: 'Savoir où vont les données des élèves, c’est pouvoir les protéger.',
+    open: false,
     missionLink:
       'Être indépendant, c’est aussi savoir où sont ses données et qui y a accès. La sécurité devient une compétence partagée, et non une affaire de spécialistes.',
     planned: [
@@ -175,11 +190,14 @@ export const buildings: readonly Building[] = [
     number: '04',
     name: 'Atelier',
     theme: 'Réparation et durabilité',
+    question: 'Peut-on encore réparer cet ordinateur ?',
     summary: 'Faire durer le matériel plutôt que le remplacer.',
     description:
       'L’Atelier aidera les établissements à prolonger la vie de leurs ordinateurs : reconditionnement, installation de systèmes libres plus légers, réparation et filières de réemploi.',
     icon: Wrench,
     pillar: 'durable',
+    why: 'C’est la fabrication qui pèse le plus lourd : un ordinateur qui dure, c’est autant de moins à produire.',
+    open: false,
     missionLink:
       'La fabrication du matériel concentre l’essentiel de l’empreinte environnementale du numérique. Réparer et reconditionner, c’est réduire cet impact tout en préservant les budgets.',
     planned: [
@@ -205,11 +223,14 @@ export const buildings: readonly Building[] = [
     number: '05',
     name: 'Hôtel de Ville',
     theme: 'Gouvernance numérique',
+    question: 'Qui décide, et comment ?',
     summary: 'Décider ensemble des choix numériques.',
     description:
       'L’Hôtel de Ville accompagnera les décisions collectives : qui décide, selon quelle feuille de route, et avec quels engagements partagés entre établissement, collectivité et communauté éducative.',
     icon: Landmark,
     pillar: 'responsable',
+    why: 'Un choix porté par toute une équipe survit aux départs et aux changements de mode.',
+    open: false,
     missionLink:
       'Une transition numérique durable ne repose pas sur une seule personne. Elle s’appuie sur des choix explicites, documentés et portés collectivement.',
     planned: [
@@ -235,11 +256,14 @@ export const buildings: readonly Building[] = [
     number: '06',
     name: 'Observatoire',
     theme: 'Indicateurs et impact',
+    question: 'Est-ce que l’on avance ?',
     summary: 'Mesurer les progrès et rendre l’impact visible.',
     description:
       'L’Observatoire réunira les indicateurs qui permettent de suivre la transition dans le temps : niveau d’indépendance, durée de vie du matériel et empreinte environnementale.',
     icon: Telescope,
     pillar: 'durable',
+    why: 'Voir le chemin parcouru donne envie de continuer, et permet de corriger le cap.',
+    open: false,
     missionLink:
       'Ce qui se mesure se pilote. L’Observatoire rend les progrès tangibles et aide à rendre compte des efforts accomplis auprès de toute la communauté éducative.',
     planned: [

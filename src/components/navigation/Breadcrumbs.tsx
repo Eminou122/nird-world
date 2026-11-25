@@ -6,9 +6,7 @@ export interface Crumb {
   to?: string
 }
 
-export function Breadcrumbs({ items, onDark = false }: { items: Crumb[]; onDark?: boolean }) {
-  const muted = onDark ? 'text-ivory-100/65 hover:text-ivory-50' : 'text-ink-muted hover:text-forest-900'
-  const current = onDark ? 'text-ivory-50' : 'text-forest-900'
+export function Breadcrumbs({ items }: { items: Crumb[] }) {
   return (
     <nav aria-label="Fil d’Ariane">
       <ol className="flex flex-wrap items-center gap-1.5 text-sm">
@@ -16,11 +14,11 @@ export function Breadcrumbs({ items, onDark = false }: { items: Crumb[]; onDark?
           <li key={item.label} className="inline-flex items-center gap-1.5">
             {index > 0 && <ChevronRight aria-hidden="true" className="size-3.5 opacity-50" />}
             {item.to ? (
-              <Link to={item.to} className={`rounded transition-colors ${muted}`}>
+              <Link to={item.to} className="rounded py-1 text-ink-muted transition-colors hover:text-forest-900">
                 {item.label}
               </Link>
             ) : (
-              <span aria-current="page" className={`font-medium ${current}`}>
+              <span aria-current="page" className="font-medium text-forest-900">
                 {item.label}
               </span>
             )}
