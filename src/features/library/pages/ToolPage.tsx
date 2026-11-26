@@ -1,5 +1,6 @@
 import { ArrowLeft, ExternalLink, Info } from 'lucide-react'
-import { Link, useParams } from 'react-router'
+import { Link, useLocation, useParams } from 'react-router'
+import { practicesHelpedBy, readReturnTo } from '../../connections/suggest'
 import { Breadcrumbs } from '../../../components/navigation/Breadcrumbs'
 import { Disclosure } from '../../../components/ui/Disclosure'
 import { buttonClass } from '../../../components/ui/buttonClass'
@@ -35,10 +36,14 @@ const external = (href: string, label: string, className: string) => (
 
 export function ToolPage() {
   const { id } = useParams()
+  // Set when the reader comes from a diagnostic report: the way back is offered on the page and kept on related tools.
+  const returnTo = readReturnTo(useLocation().state)
   const tool = getTool(id)
   if (!tool) return <NotFoundPage />
 
   const category = categories.find((c) => c.id === tool.categories[0])!
+  const practices = practicesHelpedBy(tool.id)
+  const linkState = returnTo ? { returnTo } : undefined
   const alternatives = tool.alternatives.map((other) => getTool(other)).filter((other): other is Tool => other !== undefined)
 
   return (
@@ -47,6 +52,14 @@ export function ToolPage() {
 
       <section aria-labelledby="tool-title" className="bg-sage-100">
         <div className="mx-auto max-w-6xl px-5 pt-8 pb-12 sm:px-8 sm:pb-16">
+          {returnTo && (
+            <Link
+              to={returnTo.to}
+              className="mb-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-ivory-50 px-4 font-semibold text-forest-900 ring-1 ring-forest-900/15 hover:bg-sage-200"
+            >
+              <ArrowLeft aria-hidden="true" className="size-4" /> {returnTo.label}
+            </Link>
+          )}
           <Breadcrumbs
             items={[
               { label: 'Accueil', to: '/' },
@@ -138,6 +151,31 @@ export function ToolPage() {
             </div>
           </aside>
 
+          {practices.length > 0 && (
+            <section aria-labelledby="diagnostic-link-title" className="mt-12 rounded-3xl bg-sage-100 p-6 sm:p-8">
+              <h2 id="diagnostic-link-title" className="text-xl font-medium text-forest-900">
+                Le lien avec le diagnostic de l’École
+              </h2>
+              <p className="mt-2 max-w-3xl leading-relaxed text-ink-muted">
+                Le diagnostic propose {tool.name} quand l’une de ces pratiques est absente ou à développer&nbsp;:
+              </p>
+              <ul className="mt-2 space-y-1 text-forest-900">
+                {practices.map((practice) => (
+                  <li key={practice.id}>{practice.title}</li>
+                ))}
+              </ul>
+              {returnTo ? (
+                <Link to={returnTo.to} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded font-semibold text-emerald-700 hover:text-forest-900">
+                  <ArrowLeft aria-hidden="true" className="size-4" /> {returnTo.label}
+                </Link>
+              ) : (
+                <Link to="/village/ecole" className="mt-4 inline-flex min-h-11 items-center rounded font-semibold text-emerald-700 hover:text-forest-900">
+                  Faire le diagnostic de votre établissement
+                </Link>
+              )}
+            </section>
+          )}
+
           <section aria-labelledby="details-title" className="mt-14">
             <h2 id="details-title" className="text-2xl font-medium text-forest-900 sm:text-3xl">
               Pour aller plus loin
@@ -219,19 +257,26 @@ export function ToolPage() {
               <ul className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {alternatives.map((other) => (
                   <li key={other.id}>
-                    <ToolCard tool={other} />
+                    <ToolCard tool={other} linkState={linkState} />
                   </li>
                 ))}
               </ul>
             </section>
           )}
 
-          <Link
-            to={libraryPaths.category(category.id)}
-            className="mt-12 inline-flex min-h-11 items-center gap-2 rounded font-semibold text-emerald-700 hover:text-forest-900"
-          >
-            <ArrowLeft aria-hidden="true" className="size-4" /> {category.title}
-          </Link>
+          <div className="mt-12 flex flex-wrap gap-x-8 gap-y-2">
+            {returnTo && (
+              <Link to={returnTo.to} className="inline-flex min-h-11 items-center gap-2 rounded font-semibold text-emerald-700 hover:text-forest-900">
+                <ArrowLeft aria-hidden="true" className="size-4" /> {returnTo.label}
+              </Link>
+            )}
+            <Link
+              to={libraryPaths.category(category.id)}
+              className="inline-flex min-h-11 items-center gap-2 rounded font-semibold text-emerald-700 hover:text-forest-900"
+            >
+              <ArrowLeft aria-hidden="true" className="size-4" /> {category.title}
+            </Link>
+          </div>
         </div>
       </div>
       <CompareTray />

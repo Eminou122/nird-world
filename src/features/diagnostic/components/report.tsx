@@ -1,5 +1,8 @@
 import { ArrowRight, ChevronDown, CircleQuestionMark } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useRememberedOpen } from '../../../components/ui/useRememberedOpen'
+import { suggestionsFor, type ReturnTo } from '../../connections/suggest'
+import { NextStepTools, RecommendationTools } from '../../connections/SuggestedTools'
 import { Disclosure } from '../../../components/ui/Disclosure'
 import { bandLines } from '../data/guidance'
 import { getDimension, getQuestion, maturityLabels } from '../data/questions'
@@ -165,7 +168,7 @@ function PracticeList({ findings }: { findings: PracticeFinding[] }) {
 
 /* ---------- Your next step ---------- */
 
-export function NextStep({ recommendation }: { recommendation: Recommendation | undefined }) {
+export function NextStep({ recommendation, returnTo }: { recommendation: Recommendation | undefined; returnTo: ReturnTo }) {
   if (!recommendation) {
     return (
       <section aria-labelledby="prochain-pas-title" className="rounded-3xl bg-gold-300/45 p-7 sm:p-10">
@@ -201,7 +204,8 @@ export function NextStep({ recommendation }: { recommendation: Recommendation | 
       <p className="mt-5 leading-relaxed text-forest-900/85">
         <span className="font-semibold text-forest-900">Ce que vous y gagnez&nbsp;:</span> {benefit}
       </p>
-      <p className="mt-2 text-sm text-ink-muted">
+      <NextStepTools suggestions={suggestionsFor(recommendation)} returnTo={returnTo} />
+      <p className="mt-4 text-sm text-ink-muted">
         {priorityStyles[priority].label}, {getDimension(dimension).name.toLowerCase()}
       </p>
     </section>
@@ -300,13 +304,22 @@ function DimensionRow({ result, onComplete }: { result: DimensionResult; onCompl
 }
 
 /** One recommendation: the title and first step are always visible, the reasoning and other steps open on demand. */
-export function RecommendationItem({ recommendation }: { recommendation: Recommendation }) {
+export function RecommendationItem({
+  recommendation,
+  returnTo,
+  rememberAs,
+}: {
+  recommendation: Recommendation
+  returnTo: ReturnTo
+  rememberAs: string
+}) {
+  const { open, onToggle } = useRememberedOpen(rememberAs)
   const { title, description, observation, steps, benefit, level, kind, dimension, priority } = recommendation
   const question = getQuestion(recommendation.questionId)
   const isGap = kind === 'investigation'
   return (
     <li className="border-b border-forest-900/12 break-inside-avoid last:border-b-0">
-      <details className="disclosure">
+      <details className="disclosure" open={open} onToggle={onToggle}>
         <summary className="flex gap-4 rounded-md py-5 hover:text-emerald-700">
           <span className="flex-1">
             <span className="block font-display text-xl leading-snug text-forest-900">{title}</span>
@@ -346,6 +359,7 @@ export function RecommendationItem({ recommendation }: { recommendation: Recomme
             <dt className="font-semibold text-forest-900">Ce que vous y gagnez</dt>
             <dd>{benefit}</dd>
           </div>
+          <RecommendationTools suggestions={suggestionsFor(recommendation)} returnTo={returnTo} />
         </dl>
       </details>
     </li>

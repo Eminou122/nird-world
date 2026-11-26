@@ -24,6 +24,8 @@ import {
   plural,
   priorityStyles,
 } from '../components/ui'
+import { toolsForReport, type ReturnTo } from '../../connections/suggest'
+import { ReportTools } from '../../connections/SuggestedTools'
 import { questions } from '../data/questions'
 import { analyse } from '../engine/analysis'
 import { buildRecommendations, buildRoadmap } from '../engine/recommendationEngine'
@@ -78,6 +80,7 @@ export function ResultsPage() {
       analysis: analyse(assessment.answers, result),
       recommendations,
       roadmap: buildRoadmap(recommendations),
+      tools: toolsForReport(recommendations),
     }
   }, [assessment])
 
@@ -103,7 +106,9 @@ export function ResultsPage() {
     )
   }
 
-  const { result, analysis, recommendations, roadmap } = report
+  const { result, analysis, recommendations, roadmap, tools } = report
+  const returnTo: ReturnTo = { to: diagnosticPaths.results(assessment.id), label: 'Retour à votre rapport' }
+  const remember = (section: string) => `rapport.${assessment.id}.${section}`
   const { overall, band, coverage } = result
   const justCompleted = (state as { justCompleted?: boolean } | null)?.justCompleted === true
 
@@ -190,7 +195,7 @@ export function ResultsPage() {
               </div>
 
               <div className="mt-14">
-                <NextStep recommendation={recommendations[0]} />
+                <NextStep recommendation={recommendations[0]} returnTo={returnTo} />
               </div>
 
               <section aria-labelledby="approfondir-title" className="mt-16">
@@ -202,16 +207,34 @@ export function ResultsPage() {
                     <DimensionScores dimensions={result.dimensions} />
                   </Disclosure>
                   {recommendations.length > 0 && (
-                    <Disclosure title={`Toutes les recommandations (${recommendations.length})`} hint={priorityHint}>
+                    <Disclosure
+                      title={`Toutes les recommandations (${recommendations.length})`}
+                      hint={priorityHint}
+                      rememberAs={remember('recommandations')}
+                    >
                       <p className="max-w-2xl leading-relaxed text-ink-muted">
                         Chacune vient d’une de vos réponses. Un «&nbsp;Je ne sais pas&nbsp;» donne une vérification à faire,
                         jamais un reproche.
                       </p>
                       <ul className="mt-2" data-recommendations>
                         {recommendations.map((recommendation) => (
-                          <RecommendationItem key={recommendation.id} recommendation={recommendation} />
+                          <RecommendationItem
+                            key={recommendation.id}
+                            recommendation={recommendation}
+                            returnTo={returnTo}
+                            rememberAs={remember(recommendation.id)}
+                          />
                         ))}
                       </ul>
+                    </Disclosure>
+                  )}
+                  {tools.length > 0 && (
+                    <Disclosure
+                      title={`Des outils libres pour passer à l’action (${tools.length})`}
+                      hint="Choisis d’après vos réponses, sans classement"
+                      rememberAs={remember('outils')}
+                    >
+                      <ReportTools tools={tools} returnTo={returnTo} />
                     </Disclosure>
                   )}
                   {recommendations.length > 0 && (
