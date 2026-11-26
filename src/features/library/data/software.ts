@@ -105,7 +105,7 @@ export const tools: readonly Tool[] = [
     ],
     limitations: [
       'Le stockage en ligne gratuit des fichiers est limité à 300 Mo',
-      'La synchronisation des références passe par les serveurs du projet : seuls les fichiers personnels peuvent aller ailleurs (WebDAV)',
+      'La synchronisation des références passe par les serveurs du projet : seuls les fichiers personnels peuvent aller ailleurs, sur un espace compatible WebDAV (un standard de partage de fichiers)',
     ],
     dataNote: 'Sans compte ni synchronisation, votre bibliothèque reste sur votre ordinateur.',
     website: 'https://www.zotero.org/',
@@ -397,7 +397,7 @@ export const tools: readonly Tool[] = [
       'Chaque plateforme a ses règles : il faut en choisir une qui vous convient',
       'Créer la sienne demande du temps, des compétences et de l’espace de stockage',
     ],
-    dataNote: 'Le visionnage peut utiliser le pair à pair entre spectateurs. La plateforme et chaque spectateur peuvent le désactiver.',
+    dataNote: 'Le visionnage peut utiliser le pair à pair : les spectateurs d’une même vidéo s’en échangent directement des morceaux. La plateforme et chaque spectateur peuvent le désactiver.',
     website: 'https://joinpeertube.org/fr',
     alternatives: ['nextcloud', 'obs', 'wordpress'],
     sources: [
@@ -648,7 +648,7 @@ export const tools: readonly Tool[] = [
     selfHosting: 'sans-objet',
     advantages: [
       'Aucune donnée sur un serveur distant, aucun abonnement',
-      'La version 2.7.9 a obtenu un visa de sécurité de l’ANSSI',
+      'La version 2.7.9 a obtenu un visa de sécurité de l’ANSSI, l’agence nationale chargée de la cybersécurité',
       'Remplissage automatique des mots de passe',
     ],
     limitations: [

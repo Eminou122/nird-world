@@ -98,7 +98,7 @@ export function NeighbourNav({ building }: { building: Building }) {
   const next = buildings[(index + 1) % buildings.length]!
   return (
     <nav aria-label="Autres lieux du village" className="bg-ivory-100 py-8">
-      <div className="mx-auto flex max-w-7xl justify-between gap-6 px-5 sm:px-8">
+      <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-x-6 gap-y-2 px-5 sm:px-8">
         <NeighbourLink building={previous} direction="previous" />
         <NeighbourLink building={next} direction="next" />
       </div>

@@ -183,7 +183,7 @@ export function QuestionnairePage() {
                       value={level}
                       checked={answer === level}
                       onChange={() => select(level)}
-                      className="sr-only scroll-my-32"
+                      className="absolute inset-0 size-full cursor-pointer appearance-none rounded-[inherit] opacity-0 scroll-my-24"
                     />
                     <RadioMark />
                     <span className="min-w-0 flex-1">
@@ -209,7 +209,7 @@ export function QuestionnairePage() {
                       value={value}
                       checked={answer === value}
                       onChange={() => select(value)}
-                      className="sr-only scroll-my-32"
+                      className="absolute inset-0 size-full cursor-pointer appearance-none rounded-[inherit] opacity-0 scroll-my-24"
                     />
                     <RadioMark />
                     <span className="text-forest-900">{label}</span>

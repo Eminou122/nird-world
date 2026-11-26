@@ -16,7 +16,7 @@ interface PlaceGuideProps {
 export function PlaceGuide({ building, headingRef, onSelectSchool, onClose }: PlaceGuideProps) {
   if (!building) {
     return (
-      <aside aria-labelledby="guide-title" className="rounded-3xl bg-ivory-50 p-6 sm:p-8">
+      <section aria-labelledby="guide-title" className="rounded-3xl bg-ivory-50 p-6 sm:p-8">
         <h2 id="guide-title" className="text-2xl font-medium text-forest-900">
           Par où commencer&nbsp;?
         </h2>
@@ -27,13 +27,13 @@ export function PlaceGuide({ building, headingRef, onSelectSchool, onClose }: Pl
         <button type="button" onClick={onSelectSchool} className={buttonClass('primary', 'mt-6 w-full')}>
           Me montrer l’École
         </button>
-      </aside>
+      </section>
     )
   }
 
   const { slug, name, theme, question, why, open, planned, enterLabel } = building
   return (
-    <aside
+    <section
       aria-labelledby="guide-title"
       className="rounded-3xl bg-ivory-50 p-6 sm:p-8"
       onKeyDown={(event) => event.key === 'Escape' && onClose()}
@@ -75,6 +75,6 @@ export function PlaceGuide({ building, headingRef, onSelectSchool, onClose }: Pl
       <ButtonLink to={buildingPath(slug)} variant={open ? 'primary' : 'dark'} viewTransition className="mt-6 w-full">
         {open && enterLabel ? enterLabel : 'Visiter ce lieu'}
       </ButtonLink>
-    </aside>
+    </section>
   )
 }

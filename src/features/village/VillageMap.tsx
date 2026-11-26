@@ -59,9 +59,12 @@ function MapPin({ building, active, selected, suggested, onActiveChange, onSelec
   const tooltipId = `village-tooltip-${slug}`
 
   // Keep the question inside the map: beside the pin near the top edge, otherwise above it.
+  // Even hidden, a tooltip takes up room: near the right edge it opens to the left, or the page would scroll sideways.
   const placement =
     top < 25
-      ? 'left-full top-1/2 ml-3 -translate-y-1/2'
+      ? left > 60
+        ? 'right-full top-1/2 mr-3 -translate-y-1/2'
+        : 'left-full top-1/2 ml-3 -translate-y-1/2'
       : left < 28
         ? 'bottom-full left-0 mb-2'
         : left > 72
@@ -78,8 +81,9 @@ function MapPin({ building, active, selected, suggested, onActiveChange, onSelec
       : 'bg-ivory-50 text-forest-900'
 
   return (
-    <li className={`absolute ${active ? 'z-10' : ''}`} style={{ left: `${left}%`, top: `${top}%` }}>
-      <div className="relative flex -translate-x-1/2 -translate-y-full flex-col items-center">
+    // A zero-size anchor: the pin is positioned from it, so its box never widens the page.
+    <li className={`absolute size-0 ${active ? 'z-10' : ''}`} style={{ left: `${left}%`, top: `${top}%` }}>
+      <div className="absolute bottom-0 left-0 flex w-max -translate-x-1/2 flex-col items-center">
         <button
           type="button"
           id={pinId(slug)}

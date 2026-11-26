@@ -1,19 +1,26 @@
 import { Menu, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, NavLink } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { Logo } from '../ui/Logo'
 
-const navItems = [
-  { to: '/', label: 'Accueil', end: true },
-  { to: '/village', label: 'Le village', end: false },
+/** `isCurrent` decides the highlighted entry; anchors on the home page are never "current". */
+const navItems: { to: string; label: string; isCurrent?: (pathname: string) => boolean }[] = [
+  { to: '/', label: 'Accueil', isCurrent: (pathname) => pathname === '/' },
+  {
+    to: '/village',
+    label: 'Le village',
+    isCurrent: (pathname) => pathname.startsWith('/village') && !pathname.startsWith('/village/bibliotheque'),
+  },
+  { to: '/village/bibliotheque', label: 'Bibliothèque', isCurrent: (pathname) => pathname.startsWith('/village/bibliotheque') },
   { to: '/#mission', label: 'Notre mission' },
   { to: '/#independance', label: 'Indépendance numérique' },
-] as const
+]
 
-const linkBase = 'rounded-full px-3.5 py-2 text-sm font-medium transition-colors duration-200'
+const linkBase = 'whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-medium transition-colors duration-200'
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false)
+  const { pathname } = useLocation()
 
   useEffect(() => {
     if (!open) return
@@ -26,26 +33,16 @@ export function SiteHeader() {
 
   const renderLinks = (mobile: boolean) =>
     navItems.map((item) => {
+      const current = item.isCurrent?.(pathname) ?? false
       const className = mobile ? 'block rounded-lg px-3 py-3 text-base font-medium' : linkBase
-      if ('end' in item) {
-        return (
-          <li key={item.to}>
-            <NavLink
-              to={item.to}
-              end={item.end}
-              onClick={close}
-              className={({ isActive }) =>
-                `${className} ${isActive ? 'bg-sage-200 text-forest-900' : 'text-ink-muted hover:bg-sage-100 hover:text-forest-900'}`
-              }
-            >
-              {item.label}
-            </NavLink>
-          </li>
-        )
-      }
       return (
         <li key={item.to}>
-          <Link to={item.to} onClick={close} className={`${className} text-ink-muted hover:bg-sage-100 hover:text-forest-900`}>
+          <Link
+            to={item.to}
+            onClick={close}
+            aria-current={current ? 'page' : undefined}
+            className={`${className} ${current ? 'bg-sage-200 text-forest-900' : 'text-ink-muted hover:bg-sage-100 hover:text-forest-900'}`}
+          >
             {item.label}
           </Link>
         </li>
@@ -59,7 +56,7 @@ export function SiteHeader() {
           <Logo onDark={false} />
         </Link>
 
-        <nav aria-label="Navigation principale" className="hidden lg:block">
+        <nav aria-label="Navigation principale" className="hidden xl:block">
           <ul className="flex items-center gap-1">{renderLinks(false)}</ul>
         </nav>
 
@@ -72,7 +69,7 @@ export function SiteHeader() {
           </Link>
           <button
             type="button"
-            className="inline-flex size-11 items-center justify-center rounded-full text-forest-900 hover:bg-sage-200 lg:hidden"
+            className="inline-flex size-11 items-center justify-center rounded-full text-forest-900 hover:bg-sage-200 xl:hidden"
             aria-expanded={open}
             aria-controls="menu-mobile"
             onClick={() => setOpen((value) => !value)}
@@ -84,7 +81,7 @@ export function SiteHeader() {
       </div>
 
       {open && (
-        <nav id="menu-mobile" aria-label="Navigation principale" className="border-t border-forest-900/10 px-5 pt-2 pb-5 sm:px-8 lg:hidden">
+        <nav id="menu-mobile" aria-label="Navigation principale" className="border-t border-forest-900/10 px-5 pt-2 pb-5 sm:px-8 xl:hidden">
           <ul className="space-y-1">{renderLinks(true)}</ul>
           <Link
             to="/village/ecole"

@@ -4,6 +4,7 @@ import { BuildingPage } from '../features/buildings/BuildingPage'
 import { LandingPage } from '../features/landing/LandingPage'
 import { NotFoundPage } from '../features/not-found/NotFoundPage'
 import { VillagePage } from '../features/village/VillagePage'
+import { routePaths } from './routePaths'
 
 /** The diagnostic is loaded on demand so the landing page and village stay light. */
 const diagnostic = (page: 'DiagnosticIntroPage' | 'QuestionnairePage' | 'ResultsPage' | 'HistoryPage') => async () => {
@@ -22,16 +23,16 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { index: true, element: <LandingPage /> },
-      { path: 'village', element: <VillagePage /> },
+      { path: routePaths.village, element: <VillagePage /> },
       // Open buildings have their own routes, which take precedence over the generic `village/:slug`.
-      { path: 'village/ecole', lazy: diagnostic('DiagnosticIntroPage') },
-      { path: 'village/ecole/diagnostic', lazy: diagnostic('QuestionnairePage') },
-      { path: 'village/ecole/diagnostic/resultats/:id?', lazy: diagnostic('ResultsPage') },
-      { path: 'village/ecole/historique', lazy: diagnostic('HistoryPage') },
-      { path: 'village/bibliotheque', lazy: library('LibraryPage') },
-      { path: 'village/bibliotheque/outils/:id', lazy: library('ToolPage') },
-      { path: 'village/bibliotheque/comparer', lazy: library('ComparePage') },
-      { path: 'village/:slug', element: <BuildingPage /> },
+      { path: routePaths.ecole, lazy: diagnostic('DiagnosticIntroPage') },
+      { path: routePaths.questionnaire, lazy: diagnostic('QuestionnairePage') },
+      { path: routePaths.results, lazy: diagnostic('ResultsPage') },
+      { path: routePaths.history, lazy: diagnostic('HistoryPage') },
+      { path: routePaths.library, lazy: library('LibraryPage') },
+      { path: routePaths.tool, lazy: library('ToolPage') },
+      { path: routePaths.compare, lazy: library('ComparePage') },
+      { path: routePaths.building, element: <BuildingPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

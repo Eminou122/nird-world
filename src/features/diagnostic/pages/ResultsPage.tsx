@@ -157,6 +157,9 @@ export function ResultsPage() {
           {institutionTypeLabel(assessment) && `${institutionTypeLabel(assessment)}. `}
           Mis à jour le {formatDateTime(assessment.updatedAt)}
         </p>
+        <Link to={diagnosticPaths.history} className="mt-2 inline-flex min-h-11 items-center rounded font-semibold text-emerald-700 hover:text-forest-900 print:hidden">
+          Voir tous mes diagnostics
+        </Link>
       </DiagnosticHeader>
 
       <div className="bg-sage-100">
