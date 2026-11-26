@@ -31,7 +31,7 @@ export function PlaceGuide({ building, headingRef, onSelectSchool, onClose }: Pl
     )
   }
 
-  const { slug, name, theme, question, why, open, planned } = building
+  const { slug, name, theme, question, why, open, planned, enterLabel } = building
   return (
     <aside
       aria-labelledby="guide-title"
@@ -73,7 +73,7 @@ export function PlaceGuide({ building, headingRef, onSelectSchool, onClose }: Pl
       <p className="mt-1 leading-relaxed text-ink-muted">{why}</p>
 
       <ButtonLink to={buildingPath(slug)} variant={open ? 'primary' : 'dark'} viewTransition className="mt-6 w-full">
-        {open ? `Entrer dans l’${name}` : 'Visiter ce lieu'}
+        {open && enterLabel ? enterLabel : 'Visiter ce lieu'}
       </ButtonLink>
     </aside>
   )

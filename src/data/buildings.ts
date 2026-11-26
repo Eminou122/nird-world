@@ -60,6 +60,8 @@ export interface Building {
   why: string
   /** False while the place only has a presentation page. */
   open: boolean
+  /** Label of the button that enters an open place. */
+  enterLabel?: string
   missionLink: string
   planned: readonly [PlannedFeature, PlannedFeature, PlannedFeature]
 }
@@ -99,6 +101,7 @@ export const buildings: readonly Building[] = [
     pillar: 'responsable',
     why: 'On ne change bien que ce que l’on comprend : tout commence par un état des lieux honnête.',
     open: true,
+    enterLabel: 'Entrer dans l’École',
     missionLink:
       'Avant de transformer, il faut comprendre. Le diagnostic donne à chaque établissement une image honnête de ses dépendances et oriente la suite du parcours dans le village.',
     planned: [
@@ -127,27 +130,28 @@ export const buildings: readonly Building[] = [
     question: 'Quels outils peut-on choisir librement ?',
     summary: 'Trouver des alternatives libres et éprouvées.',
     description:
-      'La Bibliothèque rassemblera des logiciels libres adaptés à l’école, des retours d’expérience et des guides pour accompagner leur adoption en classe comme dans l’administration.',
+      'La Bibliothèque aide à découvrir des logiciels libres adaptés à l’école. On part de ce que l’on veut faire, pas du nom des logiciels, et chaque fiche dit aussi ce qu’il faut savoir avant de choisir.',
     icon: Library,
     pillar: 'inclusif',
     why: 'Un logiciel libre s’étudie, se partage et s’adapte : personne ne peut vous en retirer l’usage.',
-    open: false,
+    open: true,
+    enterLabel: 'Entrer dans la Bibliothèque',
     missionLink:
       'Les logiciels libres se partagent, s’adaptent et s’étudient. Ils permettent à chaque établissement, quels que soient ses moyens, de choisir ses outils plutôt que de les subir.',
     planned: [
       {
-        title: 'Catalogue d’alternatives',
-        description: 'Des correspondances claires entre outils propriétaires et logiciels libres, classées par usage.',
+        title: 'Six envies pour commencer',
+        description: 'Partez de ce que vous voulez faire, pas du nom d’un logiciel.',
+        icon: Compass,
+      },
+      {
+        title: 'Vingt fiches vérifiées',
+        description: 'Usages, limites, licence et données, sources officielles à l’appui.',
         icon: BookOpen,
       },
       {
-        title: 'Retours d’expérience',
-        description: 'Des témoignages d’établissements qui ont déjà franchi le pas.',
-        icon: Users,
-      },
-      {
-        title: 'Guides de prise en main',
-        description: 'Des fiches courtes pour accompagner enseignants et élèves au quotidien.',
+        title: 'Un comparateur',
+        description: 'Deux ou trois outils côte à côte, sans classement arbitraire.',
         icon: FileText,
       },
     ],
